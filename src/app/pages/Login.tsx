@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { Shield, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Shield, Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 import { motion } from "motion/react";
 import { useAppContext } from "../context/AppContext";
 import { ADMIN_CREDENTIALS } from "../auth/adminCredentials";
@@ -10,10 +10,20 @@ export function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+
+  const navigateAfterLoading = (path: string) => {
+    setIsLoading(true);
+    window.setTimeout(() => {
+      navigate(path);
+    }, 1800);
+  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
+
     const normalizedEmail = email.trim().toLowerCase();
 
     if (
@@ -21,14 +31,14 @@ export function Login() {
       password === ADMIN_CREDENTIALS.password
     ) {
       setCurrentUser(null);
-      navigate("/admin");
+      navigateAfterLoading("/admin");
       return;
     }
 
     const user = users.find((u) => u.email.toLowerCase() === normalizedEmail);
     if (user && user.password === password) {
       setCurrentUser(user);
-      navigate("/dashboard");
+      navigateAfterLoading("/dashboard");
     } else {
       alert("Invalid credentials.");
     }
@@ -89,6 +99,7 @@ export function Login() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email"
                   required
+                  disabled={isLoading}
                   className="w-full pl-12 pr-4 py-3 rounded-lg bg-white/5 border border-[#c9a84c]/20 text-white placeholder:text-white/40 focus:border-[#c9a84c] focus:outline-none transition-all"
                 />
               </div>
@@ -110,11 +121,13 @@ export function Login() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
                   required
+                  disabled={isLoading}
                   className="w-full pl-12 pr-12 py-3 rounded-lg bg-white/5 border border-[#c9a84c]/20 text-white placeholder:text-white/40 focus:border-[#c9a84c] focus:outline-none transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
+                  disabled={isLoading}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors"
                 >
                   {showPassword ? (
@@ -131,6 +144,7 @@ export function Login() {
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
+                  disabled={isLoading}
                   className="w-4 h-4 rounded border-[#c9a84c]/20"
                 />
                 <span
@@ -154,9 +168,17 @@ export function Login() {
             {/* Submit */}
             <button
               type="submit"
-              className="w-full px-6 py-3 bg-[#c9a84c] text-[#0a0e1a] rounded-lg hover:bg-[#b89640] transition-all hover:scale-105"
+              disabled={isLoading}
+              className="w-full px-6 py-3 bg-[#c9a84c] text-[#0a0e1a] rounded-lg hover:bg-[#b89640] transition-all hover:scale-105 disabled:cursor-not-allowed disabled:opacity-80 disabled:hover:scale-100 flex items-center justify-center gap-2"
             >
-              Sign In
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Signing In...
+                  </>
+                ) : (
+                  "Sign In"
+                )}
             </button>
           </form>
 

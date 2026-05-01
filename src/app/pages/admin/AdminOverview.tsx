@@ -14,9 +14,9 @@ export function AdminOverview() {
 
   const stats = [
     { label: 'Total Users', value: users.length.toString(), icon: Users, change: `${activeUsers} active`, color: '#c9a84c' },
-    { label: 'Total Balance', value: `$${(totalBalance / 1000000).toFixed(1)}M`, icon: DollarSign, change: '+8.3%', color: '#10b981' },
+    { label: 'Total Balance', value: `$${totalBalance.toLocaleString()}`, icon: DollarSign, change: `${users.length} users`, color: '#10b981' },
     { label: 'Pending Withdrawals', value: pendingWithdrawals.toString(), icon: CreditCard, change: `${withdrawals.length} total`, color: '#3b82f6' },
-    { label: 'Total Deposits', value: `$${(totalTransactionValue / 1000).toFixed(0)}K`, icon: TrendingUp, change: '+15.7%', color: '#c9a84c' },
+    { label: 'Total Deposits', value: `$${totalTransactionValue.toLocaleString()}`, icon: TrendingUp, change: `${transactions.length} transactions`, color: '#c9a84c' },
   ];
 
   const recentActivity = [
@@ -57,7 +57,7 @@ export function AdminOverview() {
           >
             <div className="flex items-center justify-between mb-4">
               <stat.icon className="w-8 h-8" style={{ color: stat.color }} />
-              <div className={`px-2 py-1 rounded ${stat.change.startsWith('+') ? 'bg-[#10b981]/20 text-[#10b981]' : 'bg-[#ef4444]/20 text-[#ef4444]'}`} style={{ fontSize: '12px' }}>
+              <div className="px-2 py-1 rounded bg-white/10 text-white/70" style={{ fontSize: '12px' }}>
                 {stat.change}
               </div>
             </div>
@@ -82,24 +82,30 @@ export function AdminOverview() {
           Recent Activity
         </h2>
         <div className="space-y-4">
-          {recentActivity.map((activity, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.5 + index * 0.05 }}
-              className="flex items-center justify-between p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-all"
-            >
-              <div>
-                <div style={{ color: '#ffffff' }}>{activity.user}</div>
-                <div style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.6)' }}>{activity.action}</div>
-              </div>
-              <div className="text-right">
-                <div style={{ color: '#c9a84c' }}>{activity.amount}</div>
-                <div style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.5)' }}>{activity.time}</div>
-              </div>
-            </motion.div>
-          ))}
+          {recentActivity.length > 0 ? (
+            recentActivity.map((activity, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.5 + index * 0.05 }}
+                className="flex items-center justify-between p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-all"
+              >
+                <div>
+                  <div style={{ color: '#ffffff' }}>{activity.user}</div>
+                  <div style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.6)' }}>{activity.action}</div>
+                </div>
+                <div className="text-right">
+                  <div style={{ color: '#c9a84c' }}>{activity.amount}</div>
+                  <div style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.5)' }}>{activity.time}</div>
+                </div>
+              </motion.div>
+            ))
+          ) : (
+            <div className="p-4 rounded-lg bg-white/5 text-center" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
+              No recent activity.
+            </div>
+          )}
         </div>
       </motion.div>
     </div>

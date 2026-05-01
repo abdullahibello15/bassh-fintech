@@ -7,6 +7,7 @@ export function Withdrawals() {
   const { withdrawals, updateWithdrawal } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const today = new Date().toISOString().split('T')[0];
 
   const handleApprove = (id: number) => {
     updateWithdrawal(id, 'Approved');
@@ -75,7 +76,7 @@ export function Withdrawals() {
             Approved Today
           </div>
           <div className="font-heading" style={{ fontSize: '32px', color: '#10b981' }}>
-            {withdrawals.filter((w) => w.status === 'Approved' && w.date.startsWith('2026-03-27')).length}
+            {withdrawals.filter((w) => w.status === 'Approved' && w.requestDate === today).length}
           </div>
         </motion.div>
       </div>

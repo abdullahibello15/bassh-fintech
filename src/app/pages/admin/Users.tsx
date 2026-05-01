@@ -1,6 +1,6 @@
-import { Search, Filter, MoreVertical, X, User, Mail, DollarSign, Calendar, CreditCard, Shield, Edit, Trash2, Lock } from 'lucide-react';
+import { Search, X, Mail, DollarSign, Calendar, CreditCard, Shield, Edit, Trash2, Lock, Eye } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { useAppContext, UserType } from '../../context/AppContext';
 import { ADMIN_CREDENTIALS } from '../../auth/adminCredentials';
 
@@ -12,7 +12,6 @@ export function Users() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
-  const [openDropdown, setOpenDropdown] = useState<number | null>(null);
 
   // Add User Form State
   const [firstName, setFirstName] = useState('');
@@ -64,7 +63,6 @@ export function Users() {
   const handleViewUser = (user: UserType) => {
     setSelectedUser(user);
     setShowViewModal(true);
-    setOpenDropdown(null);
   };
 
   const handleEditUser = (user: UserType) => {
@@ -78,13 +76,22 @@ export function Users() {
     setAccountType(user.accountType || 'Standard');
     setStatus(user.status);
     setShowEditModal(true);
-    setOpenDropdown(null);
   };
 
   const handleDeleteUser = (user: UserType) => {
     setSelectedUser(user);
     setShowDeleteModal(true);
-    setOpenDropdown(null);
+  };
+
+  const handleToggleStatus = (user: UserType) => {
+    const nextStatus = user.status === 'Active' ? 'Suspended' : 'Active';
+
+    updateUser(user.id, {
+      status: nextStatus,
+    });
+    setSelectedUser((current) =>
+      current?.id === user.id ? { ...current, status: nextStatus } : current
+    );
   };
 
   const handleUpdateUser = (e: React.FormEvent) => {
@@ -154,7 +161,7 @@ export function Users() {
       </div>
 
       {/* Search Bar */}
-      <div className="mb-6 flex gap-4">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row">
         <div className="flex-1 relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
           <input
@@ -167,7 +174,7 @@ export function Users() {
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="px-6 py-3 rounded-lg bg-[#c9a84c] text-[#0a0e1a] hover:bg-[#b89640] transition-all hover:scale-105"
+          className="w-full sm:w-auto px-6 py-3 rounded-lg bg-[#c9a84c] text-[#0a0e1a] hover:bg-[#b89640] transition-all hover:scale-105"
         >
           Add User
         </button>
@@ -177,7 +184,7 @@ export function Users() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20 overflow-hidden"
+        className="hidden md:block rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20 overflow-hidden"
       >
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -204,93 +211,175 @@ export function Users() {
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.map((user, index) => (
-                <motion.tr
-                  key={user.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="border-b border-white/5 hover:bg-white/5 transition-all"
-                >
-                  <td className="p-4" style={{ color: '#ffffff' }}>
-                    {user.name}
-                  </td>
-                  <td className="p-4" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                    {user.email}
-                  </td>
-                  <td className="p-4 text-right" style={{ color: '#c9a84c' }}>
-                    ${user.balance.toLocaleString()}
-                  </td>
-                  <td className="p-4 text-center">
-                    <span
-                      className={`px-3 py-1 rounded-full ${
-                        user.status === 'Active'
-                          ? 'bg-[#10b981]/20 text-[#10b981]'
-                          : 'bg-[#ef4444]/20 text-[#ef4444]'
-                      }`}
-                      style={{ fontSize: '14px' }}
-                    >
-                      {user.status}
-                    </span>
-                  </td>
-                  <td className="p-4 text-center" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                    {user.joined}
-                  </td>
-                  <td className="p-4">
-                    <div className="flex items-center justify-center gap-2">
-                      <button
-                        onClick={() => handleViewUser(user)}
-                        className="px-3 py-1 rounded bg-[#3b82f6]/20 text-[#3b82f6] hover:bg-[#3b82f6]/30 transition-all text-sm"
+              {filteredUsers.length > 0 ? (
+                filteredUsers.map((user, index) => (
+                  <motion.tr
+                    key={user.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="border-b border-white/5 hover:bg-white/5 transition-all"
+                  >
+                    <td className="p-4" style={{ color: '#ffffff' }}>
+                      <div className="font-medium">{user.name}</div>
+                      <div className="mt-1 text-sm text-white/45">#{String(user.id).padStart(6, '0')}</div>
+                    </td>
+                    <td className="p-4" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                      {user.email}
+                    </td>
+                    <td className="p-4 text-right" style={{ color: '#c9a84c' }}>
+                      ${user.balance.toLocaleString()}
+                    </td>
+                    <td className="p-4 text-center">
+                      <span
+                        className={`px-3 py-1 rounded-full ${
+                          user.status === 'Active'
+                            ? 'bg-[#10b981]/20 text-[#10b981]'
+                            : 'bg-[#ef4444]/20 text-[#ef4444]'
+                        }`}
+                        style={{ fontSize: '14px' }}
                       >
-                        View
-                      </button>
-                      <button className="px-3 py-1 rounded bg-[#c9a84c]/20 text-[#c9a84c] hover:bg-[#c9a84c]/30 transition-all text-sm">
-                        {user.status === 'Active' ? 'Suspend' : 'Activate'}
-                      </button>
-                      <div className="relative">
+                        {user.status}
+                      </span>
+                    </td>
+                    <td className="p-4 text-center" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                      {user.joined}
+                    </td>
+                    <td className="p-4">
+                      <div className="flex items-center justify-end gap-2">
                         <button
-                          onClick={() => setOpenDropdown(openDropdown === user.id ? null : user.id)}
-                          className="p-2 rounded hover:bg-white/10 transition-all"
+                          onClick={() => handleViewUser(user)}
+                          className="inline-flex items-center gap-2 px-3 py-2 rounded bg-[#3b82f6]/20 text-[#3b82f6] hover:bg-[#3b82f6]/30 transition-all text-sm"
                         >
-                          <MoreVertical className="w-4 h-4 text-white/60" />
+                          <Eye className="w-4 h-4" />
+                          View
                         </button>
-                        {openDropdown === user.id && (
-                          <>
-                            <div
-                              className="fixed inset-0 z-10"
-                              onClick={() => setOpenDropdown(null)}
-                            />
-                            <motion.div
-                              initial={{ opacity: 0, scale: 0.95 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              className="absolute right-0 mt-2 w-48 rounded-lg bg-[#141e32] border border-[#c9a84c]/20 shadow-xl z-20"
-                            >
-                              <button
-                                onClick={() => handleEditUser(user)}
-                                className="w-full flex items-center gap-3 px-4 py-3 text-left text-white hover:bg-white/10 transition-all rounded-t-lg"
-                              >
-                                <Edit className="w-4 h-4 text-[#3b82f6]" />
-                                <span>Edit User</span>
-                              </button>
-                              <button
-                                onClick={() => handleDeleteUser(user)}
-                                className="w-full flex items-center gap-3 px-4 py-3 text-left text-[#ef4444] hover:bg-white/10 transition-all rounded-b-lg"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                                <span>Delete User</span>
-                              </button>
-                            </motion.div>
-                          </>
-                        )}
+                        <button
+                          onClick={() => handleEditUser(user)}
+                          className="inline-flex items-center gap-2 px-3 py-2 rounded bg-[#c9a84c]/20 text-[#c9a84c] hover:bg-[#c9a84c]/30 transition-all text-sm"
+                        >
+                          <Edit className="w-4 h-4" />
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleToggleStatus(user)}
+                          className="px-3 py-2 rounded bg-white/10 text-white/80 hover:bg-white/15 transition-all text-sm"
+                        >
+                          {user.status === 'Active' ? 'Suspend' : 'Activate'}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteUser(user)}
+                          className="inline-flex items-center gap-2 px-3 py-2 rounded bg-[#ef4444]/20 text-[#ef4444] hover:bg-[#ef4444]/30 transition-all text-sm"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Delete
+                        </button>
                       </div>
-                    </div>
+                    </td>
+                  </motion.tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="p-8 text-center"
+                    style={{ color: 'rgba(255, 255, 255, 0.6)' }}
+                  >
+                    No users found.
                   </td>
-                </motion.tr>
-              ))}
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
       </motion.div>
+
+      <div className="md:hidden space-y-4">
+        {filteredUsers.length > 0 ? (
+          filteredUsers.map((user, index) => (
+            <motion.div
+              key={user.id}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05 }}
+              className="rounded-xl bg-gradient-to-br from-[#141e32]/70 to-[#0a0e1a]/70 backdrop-blur-xl border border-[#c9a84c]/20 p-4"
+            >
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <div className="min-w-0">
+                  <div className="font-heading truncate" style={{ color: '#ffffff', fontSize: '20px' }}>
+                    {user.name}
+                  </div>
+                  <div className="truncate mt-1" style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '14px' }}>
+                    {user.email}
+                  </div>
+                </div>
+                <span
+                  className={`shrink-0 px-3 py-1 rounded-full ${
+                    user.status === 'Active'
+                      ? 'bg-[#10b981]/20 text-[#10b981]'
+                      : 'bg-[#ef4444]/20 text-[#ef4444]'
+                  }`}
+                  style={{ fontSize: '13px' }}
+                >
+                  {user.status}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="rounded-lg bg-white/5 p-3">
+                  <div style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '12px' }}>Balance</div>
+                  <div className="mt-1 font-heading" style={{ color: '#c9a84c', fontSize: '18px' }}>
+                    ${user.balance.toLocaleString()}
+                  </div>
+                </div>
+                <div className="rounded-lg bg-white/5 p-3">
+                  <div style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '12px' }}>Joined</div>
+                  <div className="mt-1" style={{ color: '#ffffff', fontSize: '14px' }}>
+                    {user.joined}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => handleViewUser(user)}
+                  className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded bg-[#3b82f6]/20 text-[#3b82f6] hover:bg-[#3b82f6]/30 transition-all text-sm"
+                >
+                  <Eye className="w-4 h-4" />
+                  View
+                </button>
+                <button
+                  onClick={() => handleEditUser(user)}
+                  className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded bg-[#c9a84c]/20 text-[#c9a84c] hover:bg-[#c9a84c]/30 transition-all text-sm"
+                >
+                  <Edit className="w-4 h-4" />
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleToggleStatus(user)}
+                  className="px-3 py-2 rounded bg-white/10 text-white/80 hover:bg-white/15 transition-all text-sm"
+                >
+                  {user.status === 'Active' ? 'Suspend' : 'Activate'}
+                </button>
+                <button
+                  onClick={() => handleDeleteUser(user)}
+                  className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded bg-[#ef4444]/20 text-[#ef4444] hover:bg-[#ef4444]/30 transition-all text-sm"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete
+                </button>
+              </div>
+            </motion.div>
+          ))
+        ) : (
+          <div
+            className="rounded-xl bg-gradient-to-br from-[#141e32]/70 to-[#0a0e1a]/70 backdrop-blur-xl border border-[#c9a84c]/20 p-8 text-center"
+            style={{ color: 'rgba(255, 255, 255, 0.6)' }}
+          >
+            No users found.
+          </div>
+        )}
+      </div>
 
       {/* Add User Modal */}
       <AnimatePresence>
@@ -308,9 +397,9 @@ export function Users() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="fixed inset-0 flex items-center justify-center z-50 p-4"
+              className="fixed inset-0 flex items-start justify-center z-50 overflow-y-auto p-3 py-6 sm:items-center sm:p-4"
             >
-              <div className="relative w-full max-w-2xl p-8 rounded-2xl bg-gradient-to-br from-[#141e32]/95 to-[#0a0e1a]/95 backdrop-blur-xl border border-[#c9a84c]/40 shadow-2xl">
+              <div className="relative w-full max-w-2xl max-h-[calc(100vh-3rem)] overflow-y-auto p-5 sm:p-8 rounded-xl sm:rounded-2xl bg-gradient-to-br from-[#141e32]/95 to-[#0a0e1a]/95 backdrop-blur-xl border border-[#c9a84c]/40 shadow-2xl">
                 <button
                   onClick={() => {
                     resetForm();
@@ -330,7 +419,7 @@ export function Users() {
 
                 <form onSubmit={handleAddUser} className="space-y-4">
                   {/* Name Fields - 2 Column Grid */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
                       <label className="block mb-2" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
                         First Name
@@ -447,7 +536,7 @@ export function Users() {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex gap-3 pt-4">
+                  <div className="flex flex-col gap-3 pt-4 sm:flex-row">
                     <button
                       type="button"
                       onClick={() => {
@@ -488,9 +577,9 @@ export function Users() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="fixed inset-0 flex items-center justify-center z-50 p-4"
+              className="fixed inset-0 flex items-start justify-center z-50 overflow-y-auto p-3 py-6 sm:items-center sm:p-4"
             >
-              <div className="relative w-full max-w-2xl p-8 rounded-2xl bg-gradient-to-br from-[#141e32]/95 to-[#0a0e1a]/95 backdrop-blur-xl border border-[#c9a84c]/40 shadow-2xl">
+              <div className="relative w-full max-w-2xl max-h-[calc(100vh-3rem)] overflow-y-auto p-5 sm:p-8 rounded-xl sm:rounded-2xl bg-gradient-to-br from-[#141e32]/95 to-[#0a0e1a]/95 backdrop-blur-xl border border-[#c9a84c]/40 shadow-2xl">
                 <button
                   onClick={() => setShowViewModal(false)}
                   className="absolute top-4 right-4 p-2 rounded-lg hover:bg-white/10 transition-colors"
@@ -499,17 +588,17 @@ export function Users() {
                 </button>
 
                 {/* User Avatar & Header */}
-                <div className="flex items-start gap-6 mb-6">
-                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#c9a84c] to-[#b89640] flex items-center justify-center">
-                    <span className="font-heading" style={{ fontSize: '32px', color: '#0a0e1a' }}>
+                <div className="flex flex-col gap-4 mb-6 sm:flex-row sm:items-start sm:gap-6">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-[#c9a84c] to-[#b89640] flex items-center justify-center">
+                    <span className="font-heading" style={{ fontSize: '28px', color: '#0a0e1a' }}>
                       {getInitials(selectedUser.name)}
                     </span>
                   </div>
-                  <div className="flex-1">
-                    <h2 className="font-heading mb-2" style={{ fontSize: '28px', color: '#ffffff' }}>
+                  <div className="flex-1 min-w-0">
+                    <h2 className="font-heading mb-2 break-words" style={{ fontSize: '28px', color: '#ffffff' }}>
                       {selectedUser.name}
                     </h2>
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       <span
                         className={`px-3 py-1 rounded-full ${
                           selectedUser.status === 'Active'
@@ -535,7 +624,7 @@ export function Users() {
                   <div style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '8px' }}>
                     Account Balance
                   </div>
-                  <div className="font-heading" style={{ fontSize: '40px', color: '#c9a84c' }}>
+                  <div className="font-heading break-words" style={{ fontSize: '32px', color: '#c9a84c' }}>
                     ${selectedUser.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </div>
                 </div>
@@ -544,7 +633,7 @@ export function Users() {
                 <div className="mb-6 space-y-4">
                   <div className="flex items-center gap-3 p-4 rounded-lg bg-white/5">
                     <Shield className="w-5 h-5 text-[#c9a84c]" />
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <div style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.6)' }}>User ID</div>
                       <div style={{ color: '#ffffff' }}>#{String(selectedUser.id).padStart(6, '0')}</div>
                     </div>
@@ -552,15 +641,15 @@ export function Users() {
 
                   <div className="flex items-center gap-3 p-4 rounded-lg bg-white/5">
                     <Mail className="w-5 h-5 text-[#c9a84c]" />
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <div style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.6)' }}>Email</div>
-                      <div style={{ color: '#ffffff' }}>{selectedUser.email}</div>
+                      <div className="break-all" style={{ color: '#ffffff' }}>{selectedUser.email}</div>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3 p-4 rounded-lg bg-white/5">
                     <Calendar className="w-5 h-5 text-[#c9a84c]" />
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <div style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.6)' }}>Joined Date</div>
                       <div style={{ color: '#ffffff' }}>{selectedUser.joined}</div>
                     </div>
@@ -568,7 +657,7 @@ export function Users() {
 
                   <div className="flex items-center gap-3 p-4 rounded-lg bg-white/5">
                     <CreditCard className="w-5 h-5 text-[#c9a84c]" />
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <div style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.6)' }}>Account Type</div>
                       <div style={{ color: '#ffffff' }}>{selectedUser.accountType}</div>
                     </div>
@@ -576,14 +665,29 @@ export function Users() {
                 </div>
 
                 {/* Footer Actions */}
-                <div className="flex gap-3 pt-4 border-t border-white/10">
-                  <button className="flex-1 px-6 py-3 border border-[#c9a84c]/40 text-[#c9a84c] rounded-lg hover:border-[#c9a84c] hover:bg-[#c9a84c]/10 transition-all">
+                <div className="flex flex-col gap-3 pt-4 border-t border-white/10 sm:flex-row">
+                  <button
+                    onClick={() => {
+                      setShowViewModal(false);
+                      handleEditUser(selectedUser);
+                    }}
+                    className="flex-1 px-6 py-3 border border-[#c9a84c]/40 text-[#c9a84c] rounded-lg hover:border-[#c9a84c] hover:bg-[#c9a84c]/10 transition-all"
+                  >
                     Edit User
                   </button>
-                  <button className="flex-1 px-6 py-3 border border-[#ef4444]/40 text-[#ef4444] rounded-lg hover:border-[#ef4444] hover:bg-[#ef4444]/10 transition-all">
+                  <button
+                    onClick={() => handleToggleStatus(selectedUser)}
+                    className="flex-1 px-6 py-3 border border-white/20 text-white rounded-lg hover:border-white/40 hover:bg-white/10 transition-all"
+                  >
                     {selectedUser.status === 'Active' ? 'Suspend' : 'Activate'}
                   </button>
-                  <button className="flex-1 px-6 py-3 bg-[#ef4444] text-white rounded-lg hover:bg-[#dc2626] transition-all hover:scale-105">
+                  <button
+                    onClick={() => {
+                      setShowViewModal(false);
+                      handleDeleteUser(selectedUser);
+                    }}
+                    className="flex-1 px-6 py-3 bg-[#ef4444] text-white rounded-lg hover:bg-[#dc2626] transition-all hover:scale-105"
+                  >
                     Close Account
                   </button>
                 </div>
@@ -609,9 +713,9 @@ export function Users() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="fixed inset-0 flex items-center justify-center z-50 p-4"
+              className="fixed inset-0 flex items-start justify-center z-50 overflow-y-auto p-3 py-6 sm:items-center sm:p-4"
             >
-              <div className="relative w-full max-w-2xl p-8 rounded-2xl bg-gradient-to-br from-[#141e32]/95 to-[#0a0e1a]/95 backdrop-blur-xl border border-[#c9a84c]/40 shadow-2xl">
+              <div className="relative w-full max-w-2xl max-h-[calc(100vh-3rem)] overflow-y-auto p-5 sm:p-8 rounded-xl sm:rounded-2xl bg-gradient-to-br from-[#141e32]/95 to-[#0a0e1a]/95 backdrop-blur-xl border border-[#c9a84c]/40 shadow-2xl">
                 <button
                   onClick={() => {
                     resetForm();
@@ -631,7 +735,7 @@ export function Users() {
 
                 <form onSubmit={handleUpdateUser} className="space-y-4">
                   {/* Name Fields - 2 Column Grid */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
                       <label className="block mb-2" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
                         First Name
@@ -731,7 +835,7 @@ export function Users() {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex gap-3 pt-4">
+                  <div className="flex flex-col gap-3 pt-4 sm:flex-row">
                     <button
                       type="button"
                       onClick={() => {
@@ -772,9 +876,9 @@ export function Users() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="fixed inset-0 flex items-center justify-center z-50 p-4"
+              className="fixed inset-0 flex items-start justify-center z-50 overflow-y-auto p-3 py-6 sm:items-center sm:p-4"
             >
-              <div className="relative w-full max-w-md p-8 rounded-2xl bg-gradient-to-br from-[#141e32]/95 to-[#0a0e1a]/95 backdrop-blur-xl border border-[#ef4444]/40 shadow-2xl">
+              <div className="relative w-full max-w-md max-h-[calc(100vh-3rem)] overflow-y-auto p-5 sm:p-8 rounded-xl sm:rounded-2xl bg-gradient-to-br from-[#141e32]/95 to-[#0a0e1a]/95 backdrop-blur-xl border border-[#ef4444]/40 shadow-2xl">
                 <button
                   onClick={() => setShowDeleteModal(false)}
                   className="absolute top-4 right-4 p-2 rounded-lg hover:bg-white/10 transition-colors"
@@ -799,7 +903,7 @@ export function Users() {
                     This action cannot be undone. All user data and transaction history will be permanently removed.
                   </p>
 
-                  <div className="flex gap-3">
+                  <div className="flex flex-col gap-3 sm:flex-row">
                     <button
                       onClick={() => setShowDeleteModal(false)}
                       className="flex-1 px-6 py-3 border border-white/20 text-white rounded-lg hover:border-white/40 transition-all"

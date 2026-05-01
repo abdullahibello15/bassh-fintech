@@ -20,7 +20,6 @@ export function LandingPage() {
             <a href="#features" className="text-white/80 hover:text-[#c9a84c] transition-colors">Features</a>
             <a href="#how-it-works" className="text-white/80 hover:text-[#c9a84c] transition-colors">How It Works</a>
             <a href="#security" className="text-white/80 hover:text-[#c9a84c] transition-colors">Security</a>
-            <a href="#testimonials" className="text-white/80 hover:text-[#c9a84c] transition-colors">Testimonials</a>
           </div>
           <div className="flex items-center gap-4">
             <Link to="/login" className="text-white/80 hover:text-[#c9a84c] transition-colors">
@@ -81,13 +80,13 @@ export function LandingPage() {
               <div className="w-[400px] h-[250px] bg-gradient-to-br from-[#c9a84c] to-[#b89640] rounded-2xl shadow-2xl p-8 backdrop-blur-xl border border-[#c9a84c]/30">
                 <div className="flex flex-col h-full justify-between">
                   <div>
-                    <div className="text-[#0a0e1a]/60 mb-2">Premium Account</div>
-                    <div className="text-[#0a0e1a] font-heading" style={{ fontSize: '32px' }}>$125,430.00</div>
+                    <div className="text-[#0a0e1a]/60 mb-2">Account Balance</div>
+                    <div className="text-[#0a0e1a] font-heading" style={{ fontSize: '32px' }}>$0.00</div>
                   </div>
                   <div className="flex justify-between items-end">
                     <div>
                       <div className="text-[#0a0e1a]/60 mb-1" style={{ fontSize: '12px' }}>Card Holder</div>
-                      <div className="text-[#0a0e1a]">John Anderson</div>
+                      <div className="text-[#0a0e1a]">New Account</div>
                     </div>
                     <div className="w-12 h-12 rounded-full bg-[#0a0e1a]/10 flex items-center justify-center">
                       <CreditCard className="w-6 h-6 text-[#0a0e1a]" />
@@ -238,84 +237,6 @@ export function LandingPage() {
                 <Lock className="w-32 h-32 mx-auto text-[#c9a84c]" />
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section id="testimonials" className="py-20 px-6 bg-gradient-to-br from-[#141e32]/40 to-transparent">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="font-heading mb-4" style={{ fontSize: '48px', color: '#ffffff' }}>
-              Trusted by Thousands
-            </h2>
-            <p style={{ fontSize: '18px', color: 'rgba(255, 255, 255, 0.7)' }}>
-              See what our customers say
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                name: 'Sarah Johnson',
-                role: 'Entrepreneur',
-                text: 'The best banking experience I\'ve ever had. Fast, secure, and intuitive.',
-              },
-              {
-                name: 'Michael Chen',
-                role: 'Software Engineer',
-                text: 'Finally, a bank that understands the needs of digital-first customers.',
-              },
-              {
-                name: 'Emily Rodriguez',
-                role: 'Freelance Designer',
-                text: 'Managing multiple currencies has never been easier. Highly recommended!',
-              },
-            ].map((testimonial, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className="p-8 rounded-2xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
-              >
-                <p className="mb-6" style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '16px' }}>
-                  "{testimonial.text}"
-                </p>
-                <div>
-                  <div className="font-heading" style={{ color: '#ffffff' }}>{testimonial.name}</div>
-                  <div style={{ color: 'rgba(255, 255, 255, 0.6)' }}>{testimonial.role}</div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-20 px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-8 text-center">
-            {[
-              { value: '500K+', label: 'Active Users' },
-              { value: '$2.5B', label: 'Transactions' },
-              { value: '150+', label: 'Countries' },
-              { value: '99.9%', label: 'Uptime' },
-            ].map((stat, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <div className="font-heading mb-2" style={{ fontSize: '48px', color: '#c9a84c' }}>
-                  {stat.value}
-                </div>
-                <div style={{ color: 'rgba(255, 255, 255, 0.7)' }}>{stat.label}</div>
-              </motion.div>
-            ))}
           </div>
         </div>
       </section>

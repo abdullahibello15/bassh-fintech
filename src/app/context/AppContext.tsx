@@ -66,45 +66,39 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const defaultUsers: UserType[] = [
-  { id: 1, name: 'John Anderson', email: 'john@example.com', password: 'password123', balance: 125430, status: 'Active', joined: '2025-01-15', accountType: 'Premium' },
-  { id: 2, name: 'Sarah Williams', email: 'sarah@example.com', password: 'password123', balance: 89250, status: 'Active', joined: '2025-02-20', accountType: 'Standard' },
-  { id: 3, name: 'Mike Johnson', email: 'mike@example.com', password: 'password123', balance: 45680, status: 'Suspended', joined: '2024-11-10', accountType: 'Standard' },
-  { id: 4, name: 'Emily Davis', email: 'emily@example.com', password: 'password123', balance: 156890, status: 'Active', joined: '2024-12-05', accountType: 'Premium' },
-  { id: 5, name: 'Tom Brown', email: 'tom@example.com', password: 'password123', balance: 32100, status: 'Active', joined: '2026-01-08', accountType: 'Basic' },
-  { id: 6, name: 'Lisa Garcia', email: 'lisa@example.com', password: 'password123', balance: 98450, status: 'Active', joined: '2025-03-12', accountType: 'Premium' },
-  { id: 7, name: 'David Martinez', email: 'david@example.com', password: 'password123', balance: 67230, status: 'Suspended', joined: '2025-01-28', accountType: 'Standard' },
-  { id: 8, name: 'Jessica Wilson', email: 'jessica@example.com', password: 'password123', balance: 142000, status: 'Active', joined: '2024-10-15', accountType: 'Premium' },
-];
+const legacyDummyUserEmails = new Set([
+  'john@example.com',
+  'sarah@example.com',
+  'mike@example.com',
+  'emily@example.com',
+  'tom@example.com',
+  'lisa@example.com',
+  'david@example.com',
+  'jessica@example.com',
+]);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [users, setUsers] = useState<UserType[]>(() => {
     const savedUsers = localStorage.getItem('users');
-    return savedUsers ? JSON.parse(savedUsers) : defaultUsers;
+    if (!savedUsers) return [];
+
+    return JSON.parse(savedUsers).filter(
+      (user: UserType) => !legacyDummyUserEmails.has(user.email.toLowerCase())
+    );
   });
 
-  const [transactions, setTransactions] = useState<TransactionType[]>([
-    { id: 1, userId: 1, date: '2026-04-03', time: '10:30 AM', amount: 5000, type: 'Deposit', status: 'Completed', description: 'Salary Payment' },
-    { id: 2, userId: 1, date: '2026-04-02', time: '02:15 PM', amount: -120, type: 'Withdrawal', status: 'Completed', description: 'ATM Withdrawal' },
-    { id: 3, userId: 1, date: '2026-04-01', time: '09:45 AM', amount: -1200, type: 'Transfer', status: 'Completed', description: 'Rent Payment' },
-    { id: 4, userId: 2, date: '2026-04-03', time: '11:20 AM', amount: 3000, type: 'Deposit', status: 'Completed', description: 'Client Payment' },
-    { id: 5, userId: 3, date: '2026-04-02', time: '03:30 PM', amount: -500, type: 'Withdrawal', status: 'Pending', description: 'Cash Withdrawal' },
-  ]);
+  const [transactions, setTransactions] = useState<TransactionType[]>([]);
 
-  const [withdrawals, setWithdrawals] = useState<WithdrawalType[]>([
-    { id: 1, userId: 1, userName: 'John Anderson', userEmail: 'john@example.com', amount: 5000, status: 'Pending', requestDate: '2026-04-03' },
-    { id: 2, userId: 3, userName: 'Mike Johnson', userEmail: 'mike@example.com', amount: 10000, status: 'Pending', requestDate: '2026-04-02' },
-    { id: 3, userId: 2, userName: 'Sarah Williams', userEmail: 'sarah@example.com', amount: 7500, status: 'Approved', requestDate: '2026-04-01' },
-  ]);
+  const [withdrawals, setWithdrawals] = useState<WithdrawalType[]>([]);
 
-  const [messages, setMessages] = useState<MessageType[]>([
-    { id: 1, userId: 1, user: 'John Anderson', email: 'john@example.com', category: 'Withdrawal Request', subject: 'Urgent withdrawal verification needed', message: 'I submitted a withdrawal request for $5,000 3 days ago and need it processed urgently.', status: 'Pending', date: '2026-04-03', time: '10:30 AM' },
-    { id: 2, userId: 2, user: 'Sarah Williams', email: 'sarah@example.com', category: 'Account Issue', subject: 'Cannot access my account', message: "I've been locked out of my account after multiple failed login attempts.", status: 'Pending', date: '2026-04-03', time: '09:15 AM' },
-  ]);
+  const [messages, setMessages] = useState<MessageType[]>([]);
 
   const [currentUser, setCurrentUser] = useState<UserType | null>(() => {
     const savedUser = localStorage.getItem('currentUser');
-    return savedUser ? JSON.parse(savedUser) : null;
+    if (!savedUser) return null;
+
+    const user = JSON.parse(savedUser) as UserType;
+    return legacyDummyUserEmails.has(user.email.toLowerCase()) ? null : user;
   });
 
   // Persist current user to localStorage
