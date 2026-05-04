@@ -4,7 +4,4 @@ services:
     env: static
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
-    autoDeploy: true
-    envVars:
-      - key: NODE_ENV
-        value: production
+    pullRequestPreviewsEnabled: false
