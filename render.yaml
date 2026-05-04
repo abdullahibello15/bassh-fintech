@@ -3,7 +3,7 @@ services:
     name: your-app-name
     env: static
     buildCommand: npm run build
-    staticPublishPath: ./build # or ./dist if you're using Vite
+    staticPublishPath: ./dist # or ./dist if you're using Vite
     routes:
       - type: rewrite
         source: /*
