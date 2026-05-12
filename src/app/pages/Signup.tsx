@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { Shield, Mail, Lock, User, Eye, EyeOff, Phone } from "lucide-react";
+import { Shield, Mail, Lock, User, Eye, EyeOff, Phone, Loader2 } from "lucide-react";
 import { motion } from "motion/react";
 import { useAppContext } from "../context/AppContext";
 import { ADMIN_CREDENTIALS } from "../auth/adminCredentials";
+import { persistAuthToken, signupUser } from "../auth/authApi";
 
 export function Signup() {
-  const { addUser, setCurrentUser, users } = useAppContext();
+  const { upsertUser, setCurrentUser, users } = useAppContext();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -15,41 +16,56 @@ export function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
 
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
+
     const normalizedEmail = email.trim().toLowerCase();
+    const trimmedName = fullName.trim();
+    const trimmedPhone = phone.trim();
+
+    setErrorMessage("");
 
     if (password !== confirmPassword) {
-      alert("Passwords do not match");
+      setErrorMessage("Passwords do not match.");
       return;
     }
     if (!agreedToTerms) {
-      alert("Please agree to the terms and conditions");
+      setErrorMessage("Please agree to the terms and conditions.");
       return;
     }
     if (normalizedEmail === ADMIN_CREDENTIALS.email) {
-      alert("This email is reserved for admin access");
+      setErrorMessage("This email is reserved for admin access.");
       return;
     }
     if (users.find((u) => u.email.toLowerCase() === normalizedEmail)) {
-      alert("Email already exists");
+      setErrorMessage("Email already exists.");
       return;
     }
 
-    const newUser = addUser({
-      name: fullName,
-      email: normalizedEmail,
-      phone,
-      password,
-      balance: 0,
-      status: "Active",
-      accountType: "Basic",
-    });
+    setIsLoading(true);
 
-    setCurrentUser(newUser);
-    navigate("/dashboard");
+    try {
+      const { user, token } = await signupUser({
+        name: trimmedName,
+        email: normalizedEmail,
+        phone: trimmedPhone,
+        password,
+      });
+      persistAuthToken(token);
+      const authenticatedUser = upsertUser(user);
+      setCurrentUser(authenticatedUser);
+      navigate("/dashboard");
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Unable to create your account."
+      );
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -107,6 +123,7 @@ export function Signup() {
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Enter your full name"
                   required
+                  disabled={isLoading}
                   className="w-full pl-12 pr-4 py-3 rounded-lg bg-white/5 border border-[#c9a84c]/20 text-white placeholder:text-white/40 focus:border-[#c9a84c] focus:outline-none transition-all"
                 />
               </div>
@@ -128,6 +145,7 @@ export function Signup() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email"
                   required
+                  disabled={isLoading}
                   className="w-full pl-12 pr-4 py-3 rounded-lg bg-white/5 border border-[#c9a84c]/20 text-white placeholder:text-white/40 focus:border-[#c9a84c] focus:outline-none transition-all"
                 />
               </div>
@@ -149,6 +167,7 @@ export function Signup() {
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="Enter your phone number"
                   required
+                  disabled={isLoading}
                   className="w-full pl-12 pr-4 py-3 rounded-lg bg-white/5 border border-[#c9a84c]/20 text-white placeholder:text-white/40 focus:border-[#c9a84c] focus:outline-none transition-all"
                 />
               </div>
@@ -170,11 +189,13 @@ export function Signup() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Create a password"
                   required
+                  disabled={isLoading}
                   className="w-full pl-12 pr-12 py-3 rounded-lg bg-white/5 border border-[#c9a84c]/20 text-white placeholder:text-white/40 focus:border-[#c9a84c] focus:outline-none transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
+                  disabled={isLoading}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors"
                 >
                   {showPassword ? (
@@ -202,11 +223,13 @@ export function Signup() {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Confirm your password"
                   required
+                  disabled={isLoading}
                   className="w-full pl-12 pr-12 py-3 rounded-lg bg-white/5 border border-[#c9a84c]/20 text-white placeholder:text-white/40 focus:border-[#c9a84c] focus:outline-none transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  disabled={isLoading}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors"
                 >
                   {showConfirmPassword ? (
@@ -224,6 +247,7 @@ export function Signup() {
                 type="checkbox"
                 checked={agreedToTerms}
                 onChange={(e) => setAgreedToTerms(e.target.checked)}
+                disabled={isLoading}
                 className="w-4 h-4 mt-1 rounded border-[#c9a84c]/20"
               />
               <label
@@ -240,12 +264,26 @@ export function Signup() {
               </label>
             </div>
 
+            {errorMessage && (
+              <div className="rounded-lg border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+                {errorMessage}
+              </div>
+            )}
+
             {/* Submit */}
             <button
               type="submit"
-              className="w-full px-6 py-3 bg-[#c9a84c] text-[#0a0e1a] rounded-lg hover:bg-[#b89640] transition-all hover:scale-105"
+              disabled={isLoading}
+              className="w-full px-6 py-3 bg-[#c9a84c] text-[#0a0e1a] rounded-lg hover:bg-[#b89640] transition-all hover:scale-105 disabled:cursor-not-allowed disabled:opacity-80 disabled:hover:scale-100 flex items-center justify-center gap-2"
             >
-              Create Account
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Creating Account...
+                </>
+              ) : (
+                "Create Account"
+              )}
             </button>
           </form>
 

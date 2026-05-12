@@ -4,43 +4,53 @@ import { Shield, Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 import { motion } from "motion/react";
 import { useAppContext } from "../context/AppContext";
 import { ADMIN_CREDENTIALS } from "../auth/adminCredentials";
+import { loginUser, persistAuthToken } from "../auth/authApi";
 
 export function Login() {
-  const { users, setCurrentUser } = useAppContext();
+  const { upsertUser, setCurrentUser } = useAppContext();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
 
-  const navigateAfterLoading = (path: string) => {
+  const navigateAfterLoading = (path: string, delay = 0) => {
     setIsLoading(true);
     window.setTimeout(() => {
       navigate(path);
-    }, 1800);
+    }, delay);
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isLoading) return;
 
     const normalizedEmail = email.trim().toLowerCase();
+    setErrorMessage("");
+    setIsLoading(true);
 
     if (
       normalizedEmail === ADMIN_CREDENTIALS.email &&
       password === ADMIN_CREDENTIALS.password
     ) {
+      persistAuthToken();
       setCurrentUser(null);
-      navigateAfterLoading("/admin");
+      navigateAfterLoading("/admin", 800);
       return;
     }
 
-    const user = users.find((u) => u.email.toLowerCase() === normalizedEmail);
-    if (user && user.password === password) {
-      setCurrentUser(user);
+    try {
+      const { user, token } = await loginUser(normalizedEmail, password);
+      persistAuthToken(token);
+      const authenticatedUser = upsertUser(user);
+      setCurrentUser(authenticatedUser);
       navigateAfterLoading("/dashboard");
-    } else {
-      alert("Invalid credentials.");
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Invalid credentials."
+      );
+      setIsLoading(false);
     }
   };
 
@@ -138,6 +148,12 @@ export function Login() {
                 </button>
               </div>
             </div>
+
+            {errorMessage && (
+              <div className="rounded-lg border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+                {errorMessage}
+              </div>
+            )}
 
             {/* Remember & Forgot */}
             <div className="flex items-center justify-between">

@@ -54,6 +54,7 @@ interface AppContextType {
   messages: MessageType[];
   currentUser: UserType | null;
   addUser: (user: Omit<UserType, 'id' | 'joined'>) => UserType;
+  upsertUser: (user: UserType) => UserType;
   updateUser: (id: number, user: Partial<UserType>) => void;
   deleteUser: (id: number) => void;
   setCurrentUser: (user: UserType | null) => void;
@@ -132,6 +133,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
     setUsers([...users, newUser]);
     return newUser;
+  };
+
+  const upsertUser = (incomingUser: UserType) => {
+    const existingUser = users.find(
+      (user) =>
+        user.id === incomingUser.id ||
+        user.email.toLowerCase() === incomingUser.email.toLowerCase()
+    );
+
+    const nextUser = existingUser
+      ? { ...existingUser, ...incomingUser, id: existingUser.id }
+      : incomingUser;
+
+    setUsers(
+      existingUser
+        ? users.map((user) => (user.id === existingUser.id ? nextUser : user))
+        : [...users, nextUser]
+    );
+
+    return nextUser;
   };
 
   const updateUser = (id: number, updates: Partial<UserType>) => {
@@ -219,6 +240,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         messages,
         currentUser,
         addUser,
+        upsertUser,
         updateUser,
         deleteUser,
         setCurrentUser,
