@@ -134,7 +134,7 @@ const normalizeUser = (
         .toLowerCase() || fallback.email,
     phone: String(getNestedValue(user, ["phone", "phoneNumber"]) || fallback.phone || ""),
     password: fallback.password,
-    balance: toNumber(getNestedValue(user, ["balance", "accountBalance", "initialBalance"]), 0),
+    balance: toNumber(getNestedValue(user, ["initialBalance", "balance", "accountBalance"]), 0),
     status:
       String(getNestedValue(user, ["status", "accountStatus"]) || "Active").toLowerCase() === "suspended"
         ? "Suspended"

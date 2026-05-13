@@ -12,6 +12,12 @@ import { motion } from "motion/react";
 import { WithdrawModal } from "../../components/WithdrawModal";
 import { useAppContext } from "../../context/AppContext";
 
+const currencyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 2,
+});
+
 export function DashboardOverview() {
   const { currentUser, transactions } = useAppContext();
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
@@ -20,6 +26,7 @@ export function DashboardOverview() {
     ? transactions.filter((t) => t.userId === currentUser.id).slice(0, 4)
     : [];
   const firstName = currentUser?.name.trim().split(/\s+/)[0] || "User";
+  const formattedBalance = currencyFormatter.format(currentUser?.balance || 0);
 
   return (
     <div>
@@ -50,10 +57,7 @@ export function DashboardOverview() {
             className="font-heading mb-6"
             style={{ fontSize: "48px", color: "#0a0e1a" }}
           >
-            $
-            {currentUser?.balance.toLocaleString("en-US", {
-              minimumFractionDigits: 2,
-            }) || "0.00"}
+            {formattedBalance}
           </div>
           <div
             className="flex items-center gap-2"
@@ -143,10 +147,7 @@ export function DashboardOverview() {
             className="font-heading"
             style={{ fontSize: "28px", color: "#ffffff" }}
           >
-            $
-            {currentUser?.balance.toLocaleString("en-US", {
-              minimumFractionDigits: 2,
-            }) || "0.00"}
+            {formattedBalance}
           </div>
           <div
             className="flex items-center gap-1 mt-2"

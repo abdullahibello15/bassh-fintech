@@ -117,7 +117,7 @@ const normalizeUser = (data: unknown, fallback?: Partial<UserType>): UserType =>
     password: fallback?.password,
     phone: String(getNestedValue(user, ["phone", "phoneNumber"]) || fallback?.phone || ""),
     balance: toNumber(
-      getNestedValue(user, ["balance", "accountBalance", "initialBalance"]),
+      getNestedValue(user, ["initialBalance", "balance", "accountBalance"]),
       fallback?.balance || 0
     ),
     status: normalizeStatus(
