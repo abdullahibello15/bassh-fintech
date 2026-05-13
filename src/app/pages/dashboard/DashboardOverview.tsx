@@ -18,6 +18,7 @@ export function DashboardOverview() {
   const userTransactions = currentUser
     ? transactions.filter((t) => t.userId === currentUser.id).slice(0, 4)
     : [];
+  const firstName = currentUser?.name.trim().split(/\s+/)[0] || "User";
 
   return (
     <div>
@@ -29,7 +30,7 @@ export function DashboardOverview() {
           Dashboard
         </h1>
         <p style={{ color: "rgba(255, 255, 255, 0.6)" }}>
-          Welcome back, {currentUser?.name || "User"}
+          Welcome back, {firstName}
         </p>
       </div>
 

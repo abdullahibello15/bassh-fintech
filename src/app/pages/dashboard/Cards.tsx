@@ -11,6 +11,7 @@ export function Cards() {
   const userTransactions = currentUser
     ? transactions.filter((t) => t.userId === currentUser.id).slice(0, 4)
     : [];
+  const cardHolderName = currentUser?.name.trim() || "User";
 
   return (
     <div>
@@ -88,7 +89,7 @@ export function Cards() {
                         Card Holder
                       </div>
                       <div style={{ fontSize: "16px", color: "#0a0e1a" }}>
-                        {currentUser?.name || "User"}
+                        {cardHolderName}
                       </div>
                     </div>
                     <div>

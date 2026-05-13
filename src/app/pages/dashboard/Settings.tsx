@@ -139,6 +139,14 @@ export function Settings() {
           </div>
 
           <div className="space-y-4">
+            <div className="rounded-lg bg-white/5 border border-white/10 px-4 py-3">
+              <div className="mb-1 text-sm" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
+                Full Name
+              </div>
+              <div className="break-words font-heading" style={{ fontSize: '20px', color: '#ffffff' }}>
+                {currentUser.name}
+              </div>
+            </div>
             <div>
               <label className="block mb-2" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
                 Full Name
