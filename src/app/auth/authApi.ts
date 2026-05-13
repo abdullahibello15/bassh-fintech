@@ -7,6 +7,8 @@ type AuthPayload = Record<string, unknown>;
 interface AuthResult {
   user: UserType;
   token?: string;
+  role?: string;
+  isAdmin: boolean;
 }
 
 const getNestedValue = (source: unknown, keys: string[]) => {
@@ -60,6 +62,35 @@ const findToken = (data: unknown): string | undefined => {
   return findToken(record.data);
 };
 
+const findRole = (data: unknown): string | undefined => {
+  if (!data || typeof data !== "object") return undefined;
+
+  const record = data as Record<string, unknown>;
+  const role = getNestedValue(record, [
+    "role",
+    "userRole",
+    "accountType",
+    "account_type",
+    "type",
+  ]);
+
+  if (typeof role === "string") return role;
+
+  return findRole(record.data);
+};
+
+const findAdminFlag = (data: unknown): boolean => {
+  if (!data || typeof data !== "object") return false;
+
+  const record = data as Record<string, unknown>;
+  const isAdmin = getNestedValue(record, ["isAdmin", "admin"]);
+
+  if (typeof isAdmin === "boolean") return isAdmin;
+  if (typeof isAdmin === "string") return isAdmin.toLowerCase() === "true";
+
+  return findAdminFlag(record.data);
+};
+
 const getErrorMessage = (data: unknown, fallback: string) => {
   const message = getNestedValue(data, ["message", "error", "detail"]);
   return typeof message === "string" && message.trim() ? message : fallback;
@@ -103,9 +134,9 @@ const normalizeUser = (
         .toLowerCase() || fallback.email,
     phone: String(getNestedValue(user, ["phone", "phoneNumber"]) || fallback.phone || ""),
     password: fallback.password,
-    balance: toNumber(getNestedValue(user, ["balance", "accountBalance"]), 0),
+    balance: toNumber(getNestedValue(user, ["balance", "accountBalance", "initialBalance"]), 0),
     status:
-      String(getNestedValue(user, ["status"]) || "Active").toLowerCase() === "suspended"
+      String(getNestedValue(user, ["status", "accountStatus"]) || "Active").toLowerCase() === "suspended"
         ? "Suspended"
         : "Active",
     joined: String(
@@ -138,9 +169,13 @@ const requestAuth = async (
     throw new Error(getErrorMessage(data, "Authentication failed. Please try again."));
   }
 
+  const role = findRole(data);
+
   return {
     user: normalizeUser(data, fallbackUser),
     token: findToken(data),
+    role,
+    isAdmin: findAdminFlag(data) || role?.toLowerCase() === "admin",
   };
 };
 

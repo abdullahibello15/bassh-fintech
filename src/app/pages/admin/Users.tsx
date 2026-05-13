@@ -1,17 +1,21 @@
-import { Search, X, Mail, DollarSign, Calendar, CreditCard, Shield, Edit, Trash2, Lock, Eye } from 'lucide-react';
+import { Search, X, Mail, DollarSign, Calendar, CreditCard, Shield, Edit, Trash2, Lock, Eye, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppContext, UserType } from '../../context/AppContext';
 import { ADMIN_CREDENTIALS } from '../../auth/adminCredentials';
+import { createUser, fetchUsers, removeUser, saveUser } from '../../api/usersApi';
 
 export function Users() {
-  const { users, addUser, updateUser, deleteUser } = useAppContext();
+  const { users, replaceUsers, upsertUser, deleteUser } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   // Add User Form State
   const [firstName, setFirstName] = useState('');
@@ -32,32 +36,78 @@ export function Users() {
     setStatus('Active');
   };
 
-  const handleAddUser = (e: React.FormEvent) => {
-    e.preventDefault();
-    const normalizedEmail = email.trim().toLowerCase();
+  useEffect(() => {
+    let isMounted = true;
 
-    if (!firstName || !lastName || !email || !password || !initialBalance) {
-      alert('Please fill in all fields');
+    const loadUsers = async () => {
+      setIsLoadingUsers(true);
+      setErrorMessage('');
+
+      try {
+        const apiUsers = await fetchUsers();
+        if (isMounted) {
+          replaceUsers(apiUsers);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setErrorMessage(error instanceof Error ? error.message : 'Unable to load users.');
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingUsers(false);
+        }
+      }
+    };
+
+    loadUsers();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleAddUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isSaving) return;
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
+    const balance = parseFloat(initialBalance);
+
+    setErrorMessage('');
+
+    if (!firstName.trim() || !lastName.trim() || !email.trim() || !password || !initialBalance) {
+      setErrorMessage('Please fill in all fields');
       return;
     }
     if (normalizedEmail === ADMIN_CREDENTIALS.email) {
-      alert('This email is reserved for admin access');
+      setErrorMessage('This email is reserved for admin access');
       return;
     }
     if (users.some((user) => user.email.toLowerCase() === normalizedEmail)) {
-      alert('Email already exists');
+      setErrorMessage('Email already exists');
       return;
     }
-    addUser({
-      name: `${firstName} ${lastName}`,
-      email: normalizedEmail,
-      password,
-      balance: parseFloat(initialBalance),
-      status,
-      accountType
-    });
-    resetForm();
-    setShowAddModal(false);
+
+    setIsSaving(true);
+
+    try {
+      const newUser = await createUser({
+        name: fullName,
+        email: normalizedEmail,
+        password,
+        balance,
+        status,
+        accountType
+      });
+      upsertUser(newUser);
+      resetForm();
+      setShowAddModal(false);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Unable to add user.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleViewUser = (user: UserType) => {
@@ -83,38 +133,52 @@ export function Users() {
     setShowDeleteModal(true);
   };
 
-  const handleToggleStatus = (user: UserType) => {
-    const nextStatus = user.status === 'Active' ? 'Suspended' : 'Active';
+  const handleToggleStatus = async (user: UserType) => {
+    if (isSaving) return;
 
-    updateUser(user.id, {
-      status: nextStatus,
-    });
-    setSelectedUser((current) =>
-      current?.id === user.id ? { ...current, status: nextStatus } : current
-    );
+    const nextStatus = user.status === 'Active' ? 'Suspended' : 'Active';
+    setIsSaving(true);
+    setErrorMessage('');
+
+    try {
+      const updatedUser = await saveUser(user, { status: nextStatus });
+      upsertUser(updatedUser);
+      setSelectedUser((current) =>
+        current?.id === user.id ? { ...current, ...updatedUser } : current
+      );
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Unable to update user.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleUpdateUser = (e: React.FormEvent) => {
+  const handleUpdateUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    const normalizedEmail = email.trim().toLowerCase();
+    if (isSaving) return;
 
-    if (!firstName || !lastName || !email || !initialBalance || !selectedUser) {
-      alert('Please fill in all fields');
+    const normalizedEmail = email.trim().toLowerCase();
+    const balance = parseFloat(initialBalance);
+
+    setErrorMessage('');
+
+    if (!firstName.trim() || !lastName.trim() || !email.trim() || !initialBalance || !selectedUser) {
+      setErrorMessage('Please fill in all fields');
       return;
     }
     if (normalizedEmail === ADMIN_CREDENTIALS.email) {
-      alert('This email is reserved for admin access');
+      setErrorMessage('This email is reserved for admin access');
       return;
     }
     if (users.some((user) => user.id !== selectedUser.id && user.email.toLowerCase() === normalizedEmail)) {
-      alert('Email already exists');
+      setErrorMessage('Email already exists');
       return;
     }
 
     const updates: Partial<UserType> = {
-      name: `${firstName} ${lastName}`,
+      name: `${firstName.trim()} ${lastName.trim()}`.trim(),
       email: normalizedEmail,
-      balance: parseFloat(initialBalance),
+      balance,
       accountType,
       status,
     };
@@ -123,18 +187,37 @@ export function Users() {
       updates.password = password;
     }
 
-    updateUser(selectedUser.id, updates);
-    resetForm();
-    setShowEditModal(false);
-    setSelectedUser(null);
+    setIsSaving(true);
+
+    try {
+      const updatedUser = await saveUser(selectedUser, updates);
+      upsertUser(updatedUser);
+      resetForm();
+      setShowEditModal(false);
+      setSelectedUser(null);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Unable to update user.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const confirmDelete = () => {
-    if (selectedUser) {
+  const confirmDelete = async () => {
+    if (!selectedUser || isSaving) return;
+
+    setIsSaving(true);
+    setErrorMessage('');
+
+    try {
+      await removeUser(selectedUser);
       deleteUser(selectedUser.id);
+      setShowDeleteModal(false);
+      setSelectedUser(null);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Unable to delete user.');
+    } finally {
+      setIsSaving(false);
     }
-    setShowDeleteModal(false);
-    setSelectedUser(null);
   };
 
   const getInitials = (name: string) => {
@@ -160,6 +243,12 @@ export function Users() {
         <p style={{ color: 'rgba(255, 255, 255, 0.6)' }}>Manage all user accounts</p>
       </div>
 
+      {errorMessage && (
+        <div className="mb-6 rounded-lg border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+          {errorMessage}
+        </div>
+      )}
+
       {/* Search Bar */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row">
         <div className="flex-1 relative">
@@ -174,6 +263,7 @@ export function Users() {
         </div>
         <button
           onClick={() => setShowAddModal(true)}
+          disabled={isSaving}
           className="w-full sm:w-auto px-6 py-3 rounded-lg bg-[#c9a84c] text-[#0a0e1a] hover:bg-[#b89640] transition-all hover:scale-105"
         >
           Add User
@@ -211,7 +301,20 @@ export function Users() {
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.length > 0 ? (
+              {isLoadingUsers ? (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="p-8 text-center"
+                    style={{ color: 'rgba(255, 255, 255, 0.6)' }}
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Loading users...
+                    </span>
+                  </td>
+                </tr>
+              ) : filteredUsers.length > 0 ? (
                 filteredUsers.map((user, index) => (
                   <motion.tr
                     key={user.id}
@@ -263,12 +366,14 @@ export function Users() {
                         </button>
                         <button
                           onClick={() => handleToggleStatus(user)}
+                          disabled={isSaving}
                           className="px-3 py-2 rounded bg-white/10 text-white/80 hover:bg-white/15 transition-all text-sm"
                         >
                           {user.status === 'Active' ? 'Suspend' : 'Activate'}
                         </button>
                         <button
                           onClick={() => handleDeleteUser(user)}
+                          disabled={isSaving}
                           className="inline-flex items-center gap-2 px-3 py-2 rounded bg-[#ef4444]/20 text-[#ef4444] hover:bg-[#ef4444]/30 transition-all text-sm"
                         >
                           <Trash2 className="w-4 h-4" />

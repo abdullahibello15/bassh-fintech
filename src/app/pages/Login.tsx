@@ -15,6 +15,10 @@ export function Login() {
   const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
 
+  const isLocalAdminLogin =
+    email.trim().toLowerCase() === ADMIN_CREDENTIALS.email &&
+    password === ADMIN_CREDENTIALS.password;
+
   const navigateAfterLoading = (path: string, delay = 0) => {
     setIsLoading(true);
     window.setTimeout(() => {
@@ -30,23 +34,27 @@ export function Login() {
     setErrorMessage("");
     setIsLoading(true);
 
-    if (
-      normalizedEmail === ADMIN_CREDENTIALS.email &&
-      password === ADMIN_CREDENTIALS.password
-    ) {
-      persistAuthToken();
-      setCurrentUser(null);
-      navigateAfterLoading("/admin", 800);
-      return;
-    }
-
     try {
-      const { user, token } = await loginUser(normalizedEmail, password);
+      const { user, token, isAdmin } = await loginUser(normalizedEmail, password);
       persistAuthToken(token);
+
+      if (isAdmin || normalizedEmail === ADMIN_CREDENTIALS.email) {
+        setCurrentUser(null);
+        navigateAfterLoading("/admin");
+        return;
+      }
+
       const authenticatedUser = upsertUser(user);
       setCurrentUser(authenticatedUser);
       navigateAfterLoading("/dashboard");
     } catch (error) {
+      if (isLocalAdminLogin) {
+        persistAuthToken();
+        setCurrentUser(null);
+        navigateAfterLoading("/admin");
+        return;
+      }
+
       setErrorMessage(
         error instanceof Error ? error.message : "Invalid credentials."
       );

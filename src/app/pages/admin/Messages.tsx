@@ -1,298 +1,302 @@
-import { useState } from 'react';
-import { Search, Filter, MessageCircle, Mail, Clock, CheckCircle, X } from 'lucide-react';
-import { motion } from 'motion/react';
-import { useAppContext, MessageType } from '../../context/AppContext';
+import { useEffect, useState } from "react";
+import { Clock, Loader2, MessageCircle, Send } from "lucide-react";
+import { motion } from "motion/react";
+import {
+  ConversationSummary,
+  ConversationMessage,
+  getConversationSummaries,
+  getConversationMessages,
+  replyToConversation,
+} from "../../api/chatApi";
 
 export function Messages() {
-  const { messages, updateMessage } = useAppContext();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [selectedMessage, setSelectedMessage] = useState<MessageType | null>(null);
+  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+  const [selectedConversation, setSelectedConversation] =
+    useState<ConversationSummary | null>(null);
+  const [messages, setMessages] = useState<ConversationMessage[]>([]);
+  const [replyText, setReplyText] = useState("");
+  const [isLoadingList, setIsLoadingList] = useState(true);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [isSendingReply, setIsSendingReply] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const filteredMessages = messages.filter((msg) => {
-    const matchesSearch =
-      msg.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      msg.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      msg.subject.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === 'all' || msg.status.toLowerCase() === filterStatus.toLowerCase();
-    return matchesSearch && matchesStatus;
-  });
+  const loadConversations = async (showLoading = false) => {
+    if (showLoading) setIsLoadingList(true);
 
-  const stats = {
-    total: messages.length,
-    pending: messages.filter((m) => m.status === 'Pending').length,
-    replied: messages.filter((m) => m.status === 'Replied').length,
-    resolved: messages.filter((m) => m.status === 'Resolved').length,
+    try {
+      const nextConversations = await getConversationSummaries();
+      setConversations(nextConversations);
+      setSelectedConversation((current) =>
+        current
+          ? nextConversations.find(
+              (conversation) =>
+                conversation.conversationId === current.conversationId,
+            ) || current
+          : current,
+      );
+      setErrorMessage("");
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to load conversations.",
+      );
+    } finally {
+      if (showLoading) setIsLoadingList(false);
+    }
+  };
+
+  const loadMessages = async (conversationId: string) => {
+    setIsLoadingMessages(true);
+    setErrorMessage("");
+
+    try {
+      const nextMessages = await getConversationMessages(conversationId);
+      setMessages(nextMessages);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Unable to load messages.",
+      );
+    } finally {
+      setIsLoadingMessages(false);
+    }
+  };
+
+  useEffect(() => {
+    loadConversations(true);
+    const interval = window.setInterval(() => loadConversations(), 5000);
+    return () => window.clearInterval(interval);
+  }, []);
+
+  const handleConversationClick = async (conversation: ConversationSummary) => {
+    setSelectedConversation(conversation);
+    await loadMessages(conversation.conversationId);
+  };
+
+  const handleSendReply = async () => {
+    if (!selectedConversation || !replyText.trim() || isSendingReply) return;
+    setIsSendingReply(true);
+    setErrorMessage("");
+
+    try {
+      await replyToConversation(
+        selectedConversation.conversationId,
+        replyText.trim(),
+      );
+      setReplyText("");
+      await loadMessages(selectedConversation.conversationId);
+      await loadConversations();
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Unable to send reply.",
+      );
+    } finally {
+      setIsSendingReply(false);
+    }
   };
 
   return (
     <div>
       <div className="mb-8">
-        <h1 className="font-heading mb-2" style={{ fontSize: '36px', color: '#ffffff' }}>
-          Customer Messages
+        <h1
+          className="font-heading mb-2"
+          style={{ fontSize: "36px", color: "#ffffff" }}
+        >
+          Admin Chat Portal
         </h1>
-        <p style={{ color: 'rgba(255, 255, 255, 0.6)' }}>View and respond to customer inquiries</p>
+        <p style={{ color: "rgba(255, 255, 255, 0.6)" }}>
+          Review conversations and inspect all messages in real time.
+        </p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Total Messages</span>
-            <MessageCircle className="w-5 h-5 text-[#c9a84c]" />
-          </div>
-          <div className="font-heading" style={{ fontSize: '32px', color: '#ffffff' }}>
-            {stats.total}
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
-          className="p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Pending</span>
-            <Clock className="w-5 h-5 text-[#c9a84c]" />
-          </div>
-          <div className="font-heading" style={{ fontSize: '32px', color: '#c9a84c' }}>
-            {stats.pending}
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Replied</span>
-            <Mail className="w-5 h-5 text-[#3b82f6]" />
-          </div>
-          <div className="font-heading" style={{ fontSize: '32px', color: '#3b82f6' }}>
-            {stats.replied}
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-          className="p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Resolved</span>
-            <CheckCircle className="w-5 h-5 text-[#10b981]" />
-          </div>
-          <div className="font-heading" style={{ fontSize: '32px', color: '#10b981' }}>
-            {stats.resolved}
-          </div>
-        </motion.div>
-      </div>
-
-      {/* Filters */}
-      <div className="mb-6 flex flex-col md:flex-row gap-4">
-        <div className="flex-1 relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
-          <input
-            type="text"
-            placeholder="Search messages..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 rounded-lg bg-[#141e32]/60 backdrop-blur-xl border border-[#c9a84c]/20 text-white placeholder:text-white/40 focus:border-[#c9a84c] focus:outline-none transition-all"
-          />
-        </div>
-        <div className="relative">
-          <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="w-full md:w-48 pl-12 pr-4 py-3 rounded-lg bg-[#141e32]/60 backdrop-blur-xl border border-[#c9a84c]/20 text-white focus:border-[#c9a84c] focus:outline-none transition-all appearance-none cursor-pointer"
-          >
-            <option value="all">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="replied">Replied</option>
-            <option value="resolved">Resolved</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Messages Table */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20 overflow-hidden"
-      >
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-white/10">
-                <th className="text-left p-4" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                  User
-                </th>
-                <th className="text-left p-4" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                  Category
-                </th>
-                <th className="text-left p-4" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                  Subject
-                </th>
-                <th className="text-center p-4" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                  Status
-                </th>
-                <th className="text-center p-4" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                  Date
-                </th>
-                <th className="text-center p-4" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredMessages.map((msg, index) => (
-                <motion.tr
-                  key={msg.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="border-b border-white/5 hover:bg-white/5 transition-all"
-                >
-                  <td className="p-4">
-                    <div>
-                      <div style={{ color: '#ffffff' }}>{msg.user}</div>
-                      <div style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.5)' }}>{msg.email}</div>
-                    </div>
-                  </td>
-                  <td className="p-4" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                    {msg.category}
-                  </td>
-                  <td className="p-4" style={{ color: '#ffffff' }}>
-                    {msg.subject}
-                  </td>
-                  <td className="p-4 text-center">
-                    <span
-                      className={`px-3 py-1 rounded-full ${
-                        msg.status === 'Pending'
-                          ? 'bg-[#c9a84c]/20 text-[#c9a84c]'
-                          : msg.status === 'Replied'
-                          ? 'bg-[#3b82f6]/20 text-[#3b82f6]'
-                          : 'bg-[#10b981]/20 text-[#10b981]'
-                      }`}
-                      style={{ fontSize: '14px' }}
-                    >
-                      {msg.status}
-                    </span>
-                  </td>
-                  <td className="p-4 text-center">
-                    <div style={{ color: '#ffffff' }}>{msg.date}</div>
-                    <div style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.5)' }}>{msg.time}</div>
-                  </td>
-                  <td className="p-4">
-                    <div className="flex items-center justify-center gap-2">
-                      <button
-                        onClick={() => setSelectedMessage(msg)}
-                        className="px-3 py-1 rounded bg-[#3b82f6]/20 text-[#3b82f6] hover:bg-[#3b82f6]/30 transition-all text-sm"
-                      >
-                        View
-                      </button>
-                      <button
-                        onClick={() => {
-                          updateMessage(msg.id, 'Replied');
-                        }}
-                        className="px-3 py-1 rounded bg-[#c9a84c]/20 text-[#c9a84c] hover:bg-[#c9a84c]/30 transition-all text-sm"
-                      >
-                        Mark Replied
-                      </button>
-                      <button
-                        onClick={() => {
-                          updateMessage(msg.id, 'Resolved');
-                        }}
-                        className="px-3 py-1 rounded bg-[#10b981]/20 text-[#10b981] hover:bg-[#10b981]/30 transition-all text-sm"
-                      >
-                        Mark Resolved
-                      </button>
-                    </div>
-                  </td>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </motion.div>
-
-      {/* Message Detail Modal */}
-      {selectedMessage && (
-        <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-          onClick={() => setSelectedMessage(null)}
-        >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-2xl p-8 rounded-2xl bg-gradient-to-br from-[#141e32]/95 to-[#0a0e1a]/95 backdrop-blur-xl border border-[#c9a84c]/40"
-          >
-            <button
-              onClick={() => setSelectedMessage(null)}
-              className="absolute top-4 right-4 p-2 rounded-lg hover:bg-white/10 transition-colors"
-            >
-              <X className="w-5 h-5 text-white/70" />
-            </button>
-
-            <div className="mb-6">
-              <h2 className="font-heading mb-2" style={{ fontSize: '28px', color: '#ffffff' }}>
-                {selectedMessage.subject}
-              </h2>
-              <div className="flex items-center gap-4" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
-                <span>From: {selectedMessage.user}</span>
-                <span>•</span>
-                <span>{selectedMessage.email}</span>
-              </div>
-              <div className="flex items-center gap-4 mt-2" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
-                <span>{selectedMessage.date} at {selectedMessage.time}</span>
-                <span className="px-2 py-1 rounded bg-[#c9a84c]/20 text-[#c9a84c] text-sm">{selectedMessage.category}</span>
-              </div>
-            </div>
-
-            <div className="mb-6 p-4 rounded-lg bg-white/5">
-              <p style={{ color: 'rgba(255, 255, 255, 0.8)', lineHeight: '1.6' }}>{selectedMessage.message}</p>
-            </div>
-
-            <div className="space-y-3">
-              <textarea
-                placeholder="Type your reply here..."
-                rows={4}
-                className="w-full px-4 py-3 rounded-lg bg-white/5 border border-[#c9a84c]/20 text-white placeholder:text-white/40 focus:border-[#c9a84c] focus:outline-none transition-all resize-none"
-              />
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    updateMessage(selectedMessage.id, 'Replied');
-                    setSelectedMessage(null);
-                  }}
-                  className="flex-1 px-6 py-3 bg-[#c9a84c] text-[#0a0e1a] rounded-lg hover:bg-[#b89640] transition-all hover:scale-105"
-                >
-                  Send Reply
-                </button>
-                <button
-                  onClick={() => {
-                    updateMessage(selectedMessage.id, 'Resolved');
-                    setSelectedMessage(null);
-                  }}
-                  className="px-6 py-3 border border-[#10b981]/40 text-[#10b981] rounded-lg hover:border-[#10b981] transition-all"
-                >
-                  Mark Resolved
-                </button>
-              </div>
-            </div>
-          </motion.div>
+      {errorMessage && (
+        <div className="mb-6 rounded-lg border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+          {errorMessage}
         </div>
       )}
+
+      <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
+        <div className="rounded-3xl bg-[#0b1221]/80 border border-white/10 p-4 shadow-xl shadow-black/20 backdrop-blur-xl">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="font-heading text-2xl text-white">
+                Conversations
+              </h2>
+              <p className="text-sm text-white/60">
+                Auto-refreshes every 5 seconds
+              </p>
+            </div>
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-2 text-xs text-white/70">
+              <Clock className="w-4 h-4" /> live
+            </div>
+          </div>
+
+          {isLoadingList ? (
+            <div className="flex min-h-[220px] items-center justify-center text-white/60">
+              <Loader2 className="w-6 h-6 animate-spin" />
+            </div>
+          ) : conversations.length === 0 ? (
+            <div className="min-h-[220px] flex items-center justify-center text-white/60">
+              No conversations found.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {conversations.map((conversation) => (
+                <button
+                  key={conversation.conversationId}
+                  onClick={() => handleConversationClick(conversation)}
+                  className={`w-full rounded-3xl border px-4 py-4 text-left transition-all ${
+                    selectedConversation?.conversationId ===
+                    conversation.conversationId
+                      ? "border-[#c9a84c] bg-[#c9a84c]/10"
+                      : "border-white/10 bg-white/5 hover:border-[#c9a84c]/40 hover:bg-[#c9a84c]/5"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-white">
+                        {conversation.lastSenderName}
+                      </p>
+                      <p className="mt-1 text-sm text-white/70">
+                        {conversation.lastMessage}
+                      </p>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <span className="block text-xs text-white/50">
+                        {new Date(conversation.updatedAt).toLocaleTimeString(
+                          [],
+                          {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          },
+                        )}
+                      </span>
+                      {conversation.unreadCount > 0 && (
+                        <span className="mt-2 inline-flex rounded-full bg-[#10b981] px-2 py-1 text-[11px] font-semibold text-black">
+                          {conversation.unreadCount} unread
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-3xl bg-[#0b1221]/80 border border-white/10 p-6 shadow-xl shadow-black/20 backdrop-blur-xl">
+          <div className="mb-6 flex items-start justify-between gap-4">
+            <div>
+              <h2 className="font-heading text-2xl text-white">Messages</h2>
+              <p className="text-sm text-white/60">
+                Select a conversation to view all messages.
+              </p>
+            </div>
+            <div className="hidden sm:inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-2 text-xs text-white/70">
+              <MessageCircle className="w-4 h-4" /> chat feed
+            </div>
+          </div>
+
+          {!selectedConversation ? (
+            <div className="min-h-[360px] flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-white/10 bg-white/5 text-center text-white/60">
+              <p className="text-lg">No conversation selected</p>
+              <p className="max-w-xs text-sm text-white/50">
+                Click a conversation from the left to load messages from the
+                backend.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="mb-6 rounded-3xl bg-[#131b2e]/80 border border-white/10 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm uppercase tracking-[0.18em] text-white/40">
+                      Conversation
+                    </p>
+                    <p className="mt-2 text-lg font-semibold text-white">
+                      {selectedConversation.lastSenderName}
+                    </p>
+                  </div>
+                  <div className="text-right text-sm text-white/50">
+                    Updated{" "}
+                    {new Date(selectedConversation.updatedAt).toLocaleString()}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {isLoadingMessages ? (
+                  <div className="flex min-h-[260px] items-center justify-center text-white/60">
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                  </div>
+                ) : messages.length === 0 ? (
+                  <div className="min-h-[260px] flex items-center justify-center rounded-3xl border border-dashed border-white/10 bg-white/5 text-white/60">
+                    No messages available for this conversation.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {messages.map((message) => {
+                      const isAdmin =
+                        message.senderType.toLowerCase() === "admin";
+                      return (
+                        <div
+                          key={message.id}
+                          className={`max-w-[80%] rounded-3xl px-5 py-4 ${
+                            isAdmin
+                              ? "ml-auto rounded-br-none bg-[#c9a84c]/20 text-white"
+                              : "rounded-bl-none bg-white/5 text-white"
+                          }`}
+                        >
+                          <div className="mb-2 flex items-center justify-between gap-2 text-xs uppercase tracking-[0.2em] text-white/40">
+                            <span>{message.senderName}</span>
+                            <span>
+                              {new Date(message.createdAt).toLocaleTimeString(
+                                [],
+                                { hour: "2-digit", minute: "2-digit" },
+                              )}
+                            </span>
+                          </div>
+                          <p className="whitespace-pre-line text-sm leading-6">
+                            {message.message}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-6 rounded-3xl border border-white/10 bg-[#131b2e]/80 p-4">
+                <p className="mb-3 text-sm uppercase tracking-[0.18em] text-white/40">
+                  Reply to client
+                </p>
+                <textarea
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  placeholder="Write your reply here..."
+                  rows={4}
+                  disabled={isSendingReply}
+                  className="w-full rounded-3xl border border-white/10 bg-[#0b1221]/90 px-4 py-3 text-white placeholder:text-white/40 focus:border-[#c9a84c] focus:outline-none"
+                />
+                <div className="mt-4 flex justify-end">
+                  <button
+                    onClick={handleSendReply}
+                    disabled={isSendingReply || !replyText.trim()}
+                    className="inline-flex items-center gap-2 rounded-full bg-[#c9a84c] px-5 py-3 text-sm font-semibold text-[#0a0e1a] transition hover:bg-[#b89640] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isSendingReply ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                    Send reply
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

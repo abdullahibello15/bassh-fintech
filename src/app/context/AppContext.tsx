@@ -2,6 +2,7 @@ import { createContext, useContext, useState, ReactNode, useEffect } from 'react
 
 export interface UserType {
   id: number;
+  apiId?: string;
   name: string;
   email: string;
   password?: string;
@@ -55,6 +56,7 @@ interface AppContextType {
   currentUser: UserType | null;
   addUser: (user: Omit<UserType, 'id' | 'joined'>) => UserType;
   upsertUser: (user: UserType) => UserType;
+  replaceUsers: (users: UserType[]) => void;
   updateUser: (id: number, user: Partial<UserType>) => void;
   deleteUser: (id: number) => void;
   setCurrentUser: (user: UserType | null) => void;
@@ -118,9 +120,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Update current user when users array changes
   useEffect(() => {
     if (currentUser) {
-      const updatedUser = users.find(u => u.id === currentUser.id);
+      const updatedUser = users.find(
+        u => u.id === currentUser.id || u.email.toLowerCase() === currentUser.email.toLowerCase()
+      );
       if (updatedUser) {
         setCurrentUser(updatedUser);
+      } else {
+        setCurrentUser(null);
       }
     }
   }, [users]);
@@ -139,6 +145,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const existingUser = users.find(
       (user) =>
         user.id === incomingUser.id ||
+        (user.apiId && incomingUser.apiId && user.apiId === incomingUser.apiId) ||
         user.email.toLowerCase() === incomingUser.email.toLowerCase()
     );
 
@@ -153,6 +160,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     );
 
     return nextUser;
+  };
+
+  const replaceUsers = (nextUsers: UserType[]) => {
+    setUsers(nextUsers);
   };
 
   const updateUser = (id: number, updates: Partial<UserType>) => {
@@ -241,6 +252,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         currentUser,
         addUser,
         upsertUser,
+        replaceUsers,
         updateUser,
         deleteUser,
         setCurrentUser,
