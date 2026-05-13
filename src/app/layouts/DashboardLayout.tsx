@@ -11,12 +11,45 @@ import {
   ArrowLeftRight,
 } from "lucide-react";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { fetchUser } from "../api/usersApi";
+import { useAppContext } from "../context/AppContext";
+
+const BALANCE_POLL_INTERVAL_MS = 10000;
 
 export function DashboardLayout() {
   const location = useLocation();
+  const { currentUser, upsertUser } = useAppContext();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    if (!currentUser) return;
+
+    let isMounted = true;
+
+    const loadLatestUserFromDatabase = async () => {
+      try {
+        const latestUser = await fetchUser(currentUser);
+        if (isMounted) {
+          upsertUser(latestUser);
+        }
+      } catch (error) {
+        console.error("Unable to refresh user balance from database", error);
+      }
+    };
+
+    loadLatestUserFromDatabase();
+    const intervalId = window.setInterval(
+      loadLatestUserFromDatabase,
+      BALANCE_POLL_INTERVAL_MS
+    );
+
+    return () => {
+      isMounted = false;
+      window.clearInterval(intervalId);
+    };
+  }, [currentUser?.apiId, currentUser?.id]);
 
   const navItems = [
     { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },

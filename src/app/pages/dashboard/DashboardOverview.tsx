@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   TrendingUp,
   TrendingDown,
@@ -11,46 +11,15 @@ import {
 import { motion } from "motion/react";
 import { WithdrawModal } from "../../components/WithdrawModal";
 import { useAppContext } from "../../context/AppContext";
-import { fetchUser } from "../../api/usersApi";
-
-const BALANCE_POLL_INTERVAL_MS = 10000;
 
 export function DashboardOverview() {
-  const { currentUser, transactions, upsertUser } = useAppContext();
+  const { currentUser, transactions } = useAppContext();
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
 
   const userTransactions = currentUser
     ? transactions.filter((t) => t.userId === currentUser.id).slice(0, 4)
     : [];
   const firstName = currentUser?.name.trim().split(/\s+/)[0] || "User";
-
-  useEffect(() => {
-    if (!currentUser) return;
-
-    let isMounted = true;
-
-    const loadLatestUser = async () => {
-      try {
-        const latestUser = await fetchUser(currentUser);
-        if (isMounted) {
-          upsertUser(latestUser);
-        }
-      } catch (error) {
-        console.error("Unable to refresh latest user balance", error);
-      }
-    };
-
-    loadLatestUser();
-    const intervalId = window.setInterval(
-      loadLatestUser,
-      BALANCE_POLL_INTERVAL_MS
-    );
-
-    return () => {
-      isMounted = false;
-      window.clearInterval(intervalId);
-    };
-  }, [currentUser?.apiId, currentUser?.id]);
 
   return (
     <div>

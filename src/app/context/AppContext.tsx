@@ -142,22 +142,37 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const upsertUser = (incomingUser: UserType) => {
-    const existingUser = users.find(
-      (user) =>
-        user.id === incomingUser.id ||
-        (user.apiId && incomingUser.apiId && user.apiId === incomingUser.apiId) ||
-        user.email.toLowerCase() === incomingUser.email.toLowerCase()
-    );
+    let nextUser = incomingUser;
 
-    const nextUser = existingUser
-      ? { ...existingUser, ...incomingUser, id: existingUser.id }
-      : incomingUser;
+    setUsers((currentUsers) => {
+      const existingUser = currentUsers.find(
+        (user) =>
+          user.id === incomingUser.id ||
+          (user.apiId && incomingUser.apiId && user.apiId === incomingUser.apiId) ||
+          user.email.toLowerCase() === incomingUser.email.toLowerCase()
+      );
 
-    setUsers(
-      existingUser
-        ? users.map((user) => (user.id === existingUser.id ? nextUser : user))
-        : [...users, nextUser]
-    );
+      nextUser = existingUser
+        ? { ...existingUser, ...incomingUser, id: existingUser.id }
+        : incomingUser;
+
+      return existingUser
+        ? currentUsers.map((user) => (user.id === existingUser.id ? nextUser : user))
+        : [...currentUsers, nextUser];
+    });
+
+    setCurrentUser((current) => {
+      if (
+        !current ||
+        (current.id !== incomingUser.id &&
+          (!current.apiId || !incomingUser.apiId || current.apiId !== incomingUser.apiId) &&
+          current.email.toLowerCase() !== incomingUser.email.toLowerCase())
+      ) {
+        return current;
+      }
+
+      return { ...current, ...incomingUser, id: current.id };
+    });
 
     return nextUser;
   };
