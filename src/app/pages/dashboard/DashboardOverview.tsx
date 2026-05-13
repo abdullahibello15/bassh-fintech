@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   TrendingUp,
   TrendingDown,
@@ -21,39 +21,12 @@ const currencyFormatter = new Intl.NumberFormat("en-US", {
 export function DashboardOverview() {
   const { currentUser, transactions } = useAppContext();
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
-  const [liveBalance, setLiveBalance] = useState<number>(
-    currentUser?.initialBalance || 0,
-  );
 
   const userTransactions = currentUser
     ? transactions.filter((t) => t.userId === currentUser.id).slice(0, 4)
     : [];
   const firstName = currentUser?.name.trim().split(/\s+/)[0] || "User";
-  const formattedBalance = currencyFormatter.format(liveBalance);
-
-  useEffect(() => {
-    if (!currentUser?._id) return;
-
-    // Set initial balance
-    setLiveBalance(currentUser.initialBalance || 0);
-
-    // Poll every 10 seconds for updated balance
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch(
-          `https://my-backend-wapg.onrender.com/api/users/${currentUser._id}`,
-        );
-        const data = await res.json();
-        if (data?.initialBalance !== undefined) {
-          setLiveBalance(data.initialBalance);
-        }
-      } catch (err) {
-        console.error("Failed to fetch balance:", err);
-      }
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, [currentUser?._id]);
+  const formattedBalance = currencyFormatter.format(currentUser?.balance || 0);
 
   return (
     <div>

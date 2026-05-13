@@ -7,7 +7,6 @@ import {
 } from "react";
 
 export interface UserType {
-  _id?: string;
   id: number;
   apiId?: string;
   name: string;
