@@ -1,9 +1,9 @@
-import { Search, X, Mail, DollarSign, Calendar, CreditCard, Shield, Edit, Trash2, Lock, Eye, Loader2 } from 'lucide-react';
+import { Search, X, Mail, DollarSign, Calendar, CreditCard, Shield, Edit, Trash2, Lock, Eye, Loader2, Phone } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { useAppContext, UserType } from '../../context/AppContext';
 import { ADMIN_CREDENTIALS } from '../../auth/adminCredentials';
-import { createUser, fetchUsers, removeUser, saveUser } from '../../api/usersApi';
+import { createUser, fetchUsers, removeUser, saveUser, updateUserStatus } from '../../api/usersApi';
 
 export function Users() {
   const { users, replaceUsers, upsertUser, deleteUser } = useAppContext();
@@ -21,6 +21,7 @@ export function Users() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [initialBalance, setInitialBalance] = useState('');
   const [accountType, setAccountType] = useState<string>('Standard');
@@ -30,6 +31,7 @@ export function Users() {
     setFirstName('');
     setLastName('');
     setEmail('');
+    setPhone('');
     setPassword('');
     setInitialBalance('');
     setAccountType('Standard');
@@ -71,6 +73,7 @@ export function Users() {
     if (isSaving) return;
 
     const normalizedEmail = email.trim().toLowerCase();
+    const trimmedPhone = phone.trim();
     const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
     const balance = parseFloat(initialBalance);
 
@@ -78,6 +81,10 @@ export function Users() {
 
     if (!firstName.trim() || !lastName.trim() || !email.trim() || !password || !initialBalance) {
       setErrorMessage('Please fill in all fields');
+      return;
+    }
+    if (!Number.isFinite(balance)) {
+      setErrorMessage('Please enter a valid initial balance');
       return;
     }
     if (normalizedEmail === ADMIN_CREDENTIALS.email) {
@@ -95,6 +102,7 @@ export function Users() {
       const newUser = await createUser({
         name: fullName,
         email: normalizedEmail,
+        phone: trimmedPhone,
         password,
         balance,
         status,
@@ -121,6 +129,7 @@ export function Users() {
     setFirstName(first);
     setLastName(last.join(' '));
     setEmail(user.email);
+    setPhone(user.phone || '');
     setPassword('');
     setInitialBalance(user.balance.toString());
     setAccountType(user.accountType || 'Standard');
@@ -141,7 +150,7 @@ export function Users() {
     setErrorMessage('');
 
     try {
-      const updatedUser = await saveUser(user, { status: nextStatus });
+      const updatedUser = await updateUserStatus(user, nextStatus);
       upsertUser(updatedUser);
       setSelectedUser((current) =>
         current?.id === user.id ? { ...current, ...updatedUser } : current
@@ -158,12 +167,17 @@ export function Users() {
     if (isSaving) return;
 
     const normalizedEmail = email.trim().toLowerCase();
+    const trimmedPhone = phone.trim();
     const balance = parseFloat(initialBalance);
 
     setErrorMessage('');
 
     if (!firstName.trim() || !lastName.trim() || !email.trim() || !initialBalance || !selectedUser) {
       setErrorMessage('Please fill in all fields');
+      return;
+    }
+    if (!Number.isFinite(balance)) {
+      setErrorMessage('Please enter a valid account balance');
       return;
     }
     if (normalizedEmail === ADMIN_CREDENTIALS.email) {
@@ -178,6 +192,7 @@ export function Users() {
     const updates: Partial<UserType> = {
       name: `${firstName.trim()} ${lastName.trim()}`.trim(),
       email: normalizedEmail,
+      phone: trimmedPhone,
       balance,
       accountType,
       status,
@@ -352,6 +367,7 @@ export function Users() {
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => handleViewUser(user)}
+                          disabled={isSaving}
                           className="inline-flex items-center gap-2 px-3 py-2 rounded bg-[#3b82f6]/20 text-[#3b82f6] hover:bg-[#3b82f6]/30 transition-all text-sm"
                         >
                           <Eye className="w-4 h-4" />
@@ -359,6 +375,7 @@ export function Users() {
                         </button>
                         <button
                           onClick={() => handleEditUser(user)}
+                          disabled={isSaving}
                           className="inline-flex items-center gap-2 px-3 py-2 rounded bg-[#c9a84c]/20 text-[#c9a84c] hover:bg-[#c9a84c]/30 transition-all text-sm"
                         >
                           <Edit className="w-4 h-4" />
@@ -369,7 +386,7 @@ export function Users() {
                           disabled={isSaving}
                           className="px-3 py-2 rounded bg-white/10 text-white/80 hover:bg-white/15 transition-all text-sm"
                         >
-                          {user.status === 'Active' ? 'Suspend' : 'Activate'}
+                          {isSaving ? 'Saving...' : user.status === 'Active' ? 'Suspend' : 'Activate'}
                         </button>
                         <button
                           onClick={() => handleDeleteUser(user)}
@@ -448,6 +465,7 @@ export function Users() {
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => handleViewUser(user)}
+                  disabled={isSaving}
                   className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded bg-[#3b82f6]/20 text-[#3b82f6] hover:bg-[#3b82f6]/30 transition-all text-sm"
                 >
                   <Eye className="w-4 h-4" />
@@ -455,6 +473,7 @@ export function Users() {
                 </button>
                 <button
                   onClick={() => handleEditUser(user)}
+                  disabled={isSaving}
                   className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded bg-[#c9a84c]/20 text-[#c9a84c] hover:bg-[#c9a84c]/30 transition-all text-sm"
                 >
                   <Edit className="w-4 h-4" />
@@ -462,9 +481,10 @@ export function Users() {
                 </button>
                 <button
                   onClick={() => handleToggleStatus(user)}
+                  disabled={isSaving}
                   className="px-3 py-2 rounded bg-white/10 text-white/80 hover:bg-white/15 transition-all text-sm"
                 >
-                  {user.status === 'Active' ? 'Suspend' : 'Activate'}
+                  {isSaving ? 'Saving...' : user.status === 'Active' ? 'Suspend' : 'Activate'}
                 </button>
                 <button
                   onClick={() => handleDeleteUser(user)}
@@ -571,6 +591,23 @@ export function Users() {
                     </div>
                   </div>
 
+                  {/* Phone */}
+                  <div>
+                    <label className="block mb-2" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                      Phone Number
+                    </label>
+                    <div className="relative">
+                      <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
+                      <input
+                        type="tel"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="Enter phone number"
+                        className="w-full pl-12 pr-4 py-3 rounded-lg bg-white/5 border border-[#c9a84c]/20 text-white placeholder:text-white/40 focus:border-[#c9a84c] focus:outline-none transition-all"
+                      />
+                    </div>
+                  </div>
+
                   {/* Password */}
                   <div>
                     <label className="block mb-2" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
@@ -648,15 +685,17 @@ export function Users() {
                         resetForm();
                         setShowAddModal(false);
                       }}
+                      disabled={isSaving}
                       className="flex-1 px-6 py-3 border border-[#c9a84c]/40 text-white rounded-lg hover:border-[#c9a84c] transition-all"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
+                      disabled={isSaving}
                       className="flex-1 px-6 py-3 bg-[#c9a84c] text-[#0a0e1a] rounded-lg hover:bg-[#b89640] transition-all hover:scale-105"
                     >
-                      Add User
+                      {isSaving ? 'Adding...' : 'Add User'}
                     </button>
                   </div>
                 </form>
@@ -753,6 +792,14 @@ export function Users() {
                   </div>
 
                   <div className="flex items-center gap-3 p-4 rounded-lg bg-white/5">
+                    <Phone className="w-5 h-5 text-[#c9a84c]" />
+                    <div className="flex-1 min-w-0">
+                      <div style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.6)' }}>Phone</div>
+                      <div className="break-all" style={{ color: '#ffffff' }}>{selectedUser.phone || 'Not provided'}</div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 p-4 rounded-lg bg-white/5">
                     <Calendar className="w-5 h-5 text-[#c9a84c]" />
                     <div className="flex-1 min-w-0">
                       <div style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.6)' }}>Joined Date</div>
@@ -782,9 +829,10 @@ export function Users() {
                   </button>
                   <button
                     onClick={() => handleToggleStatus(selectedUser)}
+                    disabled={isSaving}
                     className="flex-1 px-6 py-3 border border-white/20 text-white rounded-lg hover:border-white/40 hover:bg-white/10 transition-all"
                   >
-                    {selectedUser.status === 'Active' ? 'Suspend' : 'Activate'}
+                    {isSaving ? 'Saving...' : selectedUser.status === 'Active' ? 'Suspend' : 'Activate'}
                   </button>
                   <button
                     onClick={() => {
@@ -887,6 +935,23 @@ export function Users() {
                     </div>
                   </div>
 
+                  {/* Phone */}
+                  <div>
+                    <label className="block mb-2" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                      Phone Number
+                    </label>
+                    <div className="relative">
+                      <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
+                      <input
+                        type="tel"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="Enter phone number"
+                        className="w-full pl-12 pr-4 py-3 rounded-lg bg-white/5 border border-[#c9a84c]/20 text-white placeholder:text-white/40 focus:border-[#c9a84c] focus:outline-none transition-all"
+                      />
+                    </div>
+                  </div>
+
                   {/* Password Reset */}
                   <div>
                     <label className="block mb-2" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
@@ -924,6 +989,22 @@ export function Users() {
                     </div>
                   </div>
 
+                  {/* Account Type */}
+                  <div>
+                    <label className="block mb-2" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                      Account Type
+                    </label>
+                    <select
+                      value={accountType}
+                      onChange={(e) => setAccountType(e.target.value)}
+                      className="w-full px-4 py-3 rounded-lg bg-white/5 border border-[#c9a84c]/20 text-white focus:border-[#c9a84c] focus:outline-none transition-all appearance-none cursor-pointer"
+                    >
+                      <option value="Basic">Basic</option>
+                      <option value="Standard">Standard</option>
+                      <option value="Premium">Premium</option>
+                    </select>
+                  </div>
+
                   {/* Status */}
                   <div>
                     <label className="block mb-2" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
@@ -947,15 +1028,17 @@ export function Users() {
                         resetForm();
                         setShowEditModal(false);
                       }}
+                      disabled={isSaving}
                       className="flex-1 px-6 py-3 border border-[#c9a84c]/40 text-white rounded-lg hover:border-[#c9a84c] transition-all"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
+                      disabled={isSaving}
                       className="flex-1 px-6 py-3 bg-[#c9a84c] text-[#0a0e1a] rounded-lg hover:bg-[#b89640] transition-all hover:scale-105"
                     >
-                      Save Changes
+                      {isSaving ? 'Saving...' : 'Save Changes'}
                     </button>
                   </div>
                 </form>
@@ -1011,12 +1094,14 @@ export function Users() {
                   <div className="flex flex-col gap-3 sm:flex-row">
                     <button
                       onClick={() => setShowDeleteModal(false)}
+                      disabled={isSaving}
                       className="flex-1 px-6 py-3 border border-white/20 text-white rounded-lg hover:border-white/40 transition-all"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={confirmDelete}
+                      disabled={isSaving}
                       className="flex-1 px-6 py-3 bg-[#ef4444] text-white rounded-lg hover:bg-[#dc2626] transition-all hover:scale-105"
                     >
                       Delete User

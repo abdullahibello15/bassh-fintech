@@ -161,6 +161,31 @@ const requestUsers = async (
 
 const userEndpoint = (user: UserType) => `${USERS_API_URL}/${encodeURIComponent(user.apiId || String(user.id))}`;
 
+const withoutUndefined = (payload: UsersPayload) => {
+  return Object.fromEntries(
+    Object.entries(payload).filter(([, value]) => value !== undefined)
+  );
+};
+
+const buildUserPayload = (updates: Partial<UserType>) => {
+  const [firstName, ...lastNameParts] = updates.name?.trim().split(/\s+/) || [];
+
+  return withoutUndefined({
+    ...updates,
+    name: updates.name,
+    fullName: updates.name,
+    firstName,
+    lastName: lastNameParts.length > 0 ? lastNameParts.join(" ") : undefined,
+    balance: updates.balance,
+    accountBalance: updates.balance,
+    initialBalance: updates.balance,
+    status: updates.status,
+    accountStatus: updates.status,
+    phoneNumber: updates.phone,
+    account_type: updates.accountType,
+  });
+};
+
 export const fetchUsers = async () => {
   const data = await requestUsers(USERS_API_URL, { method: "GET" }, "Unable to load users.");
   return findUsersArray(data).map((user) => normalizeUser(user));
@@ -169,6 +194,7 @@ export const fetchUsers = async () => {
 export const createUser = async (input: {
   name: string;
   email: string;
+  phone?: string;
   password: string;
   balance: number;
   status: UserType["status"];
@@ -181,6 +207,8 @@ export const createUser = async (input: {
     firstName,
     lastName: lastNameParts.join(" "),
     email: input.email,
+    phone: input.phone,
+    phoneNumber: input.phone,
     password: input.password,
     balance: input.balance,
     accountBalance: input.balance,
@@ -206,13 +234,7 @@ export const createUser = async (input: {
 };
 
 export const saveUser = async (user: UserType, updates: Partial<UserType>) => {
-  const payload: UsersPayload = {
-    ...updates,
-    fullName: updates.name,
-    accountBalance: updates.balance,
-    initialBalance: updates.balance,
-    accountStatus: updates.status,
-  };
+  const payload = buildUserPayload(updates);
 
   const makeRequest = (method: "PATCH" | "PUT") =>
     requestUsers(
@@ -237,6 +259,37 @@ export const saveUser = async (user: UserType, updates: Partial<UserType>) => {
 
     const data = await makeRequest("PUT");
     return normalizeUser(data, { ...user, ...updates });
+  }
+};
+
+export const updateUserStatus = async (
+  user: UserType,
+  status: UserType["status"]
+) => {
+  const payload = buildUserPayload({ status });
+
+  const makeStatusRequest = () =>
+    requestUsers(
+      `${userEndpoint(user)}/status`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      },
+      "Unable to update user status."
+    );
+
+  try {
+    const data = await makeStatusRequest();
+    return normalizeUser(data, { ...user, status });
+  } catch (error) {
+    if (
+      !(error instanceof UsersApiError) ||
+      (error.status !== 404 && error.status !== 405)
+    ) {
+      throw error;
+    }
+
+    return saveUser(user, { status });
   }
 };
 

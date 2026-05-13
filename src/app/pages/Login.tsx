@@ -44,6 +44,14 @@ export function Login() {
         return;
       }
 
+      if (user.status === "Suspended") {
+        persistAuthToken();
+        setCurrentUser(null);
+        setErrorMessage("Your account is suspended. Please contact support.");
+        setIsLoading(false);
+        return;
+      }
+
       const authenticatedUser = upsertUser(user);
       setCurrentUser(authenticatedUser);
       navigateAfterLoading("/dashboard");
