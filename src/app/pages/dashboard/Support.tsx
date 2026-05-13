@@ -502,7 +502,6 @@ export function Support() {
           </div>
         </div>
       </motion.div>
-      console.log(localStorage)
     </div>
   );
 }
