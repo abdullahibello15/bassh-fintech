@@ -191,6 +191,16 @@ export const fetchUsers = async () => {
   return findUsersArray(data).map((user) => normalizeUser(user));
 };
 
+export const fetchUser = async (user: UserType) => {
+  const data = await requestUsers(
+    userEndpoint(user),
+    { method: "GET" },
+    "Unable to load user."
+  );
+
+  return normalizeUser(data, user);
+};
+
 export const createUser = async (input: {
   name: string;
   email: string;
