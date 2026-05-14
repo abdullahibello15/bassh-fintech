@@ -159,7 +159,11 @@ const requestUsers = async (
   return data;
 };
 
-const userEndpoint = (user: UserType) => `${USERS_API_URL}/${encodeURIComponent(user.apiId || String(user.id))}`;
+const userEndpointById = (userId: string | number) =>
+  `${USERS_API_URL}/${encodeURIComponent(String(userId))}`;
+
+const userEndpoint = (user: UserType) =>
+  userEndpointById(user.apiId || String(user.id));
 
 const withoutUndefined = (payload: UsersPayload) => {
   return Object.fromEntries(
@@ -192,13 +196,20 @@ export const fetchUsers = async () => {
 };
 
 export const fetchUser = async (user: UserType) => {
+  return fetchUserById(user.apiId || String(user.id), user);
+};
+
+export const fetchUserById = async (
+  userId: string | number,
+  fallback?: Partial<UserType>
+) => {
   const data = await requestUsers(
-    userEndpoint(user),
+    userEndpointById(userId),
     { method: "GET" },
     "Unable to load user."
   );
 
-  return normalizeUser(data, user);
+  return normalizeUser(data, fallback);
 };
 
 export const createUser = async (input: {
