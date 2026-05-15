@@ -35,7 +35,10 @@ export function Login() {
     setIsLoading(true);
 
     try {
-      const { user, token, isAdmin } = await loginUser(normalizedEmail, password);
+      const { user, token, isAdmin } = await loginUser(
+        normalizedEmail,
+        password,
+      );
       persistAuthToken(token);
 
       if (isAdmin || normalizedEmail === ADMIN_CREDENTIALS.email) {
@@ -53,6 +56,13 @@ export function Login() {
       }
 
       const authenticatedUser = upsertUser(user);
+      localStorage.setItem(
+        "authUserId",
+        authenticatedUser.apiId ||
+          authenticatedUser._id ||
+          String(authenticatedUser.id),
+      );
+      localStorage.setItem("currentUser", JSON.stringify(authenticatedUser));
       setCurrentUser(authenticatedUser);
       navigateAfterLoading("/dashboard");
     } catch (error) {
@@ -64,7 +74,7 @@ export function Login() {
       }
 
       setErrorMessage(
-        error instanceof Error ? error.message : "Invalid credentials."
+        error instanceof Error ? error.message : "Invalid credentials.",
       );
       setIsLoading(false);
     }
@@ -203,14 +213,14 @@ export function Login() {
               disabled={isLoading}
               className="w-full px-6 py-3 bg-[#c9a84c] text-[#0a0e1a] rounded-lg hover:bg-[#b89640] transition-all hover:scale-105 disabled:cursor-not-allowed disabled:opacity-80 disabled:hover:scale-100 flex items-center justify-center gap-2"
             >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Signing In...
-                  </>
-                ) : (
-                  "Sign In"
-                )}
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Signing In...
+                </>
+              ) : (
+                "Sign In"
+              )}
             </button>
           </form>
 

@@ -4,6 +4,23 @@ const AUTH_API_BASE_URL = "https://my-backend-wapg.onrender.com/api/auth";
 
 type AuthPayload = Record<string, unknown>;
 
+const BALANCE_KEYS = [
+  "balance",
+  "accountBalance",
+  "account_balance",
+  "currentBalance",
+  "current_balance",
+  "availableBalance",
+  "available_balance",
+  "walletBalance",
+  "wallet_balance",
+  "totalBalance",
+  "total_balance",
+  "amount",
+  "initialBalance",
+  "initial_balance",
+];
+
 interface AuthResult {
   user: UserType;
   token?: string;
@@ -19,6 +36,23 @@ const getNestedValue = (source: unknown, keys: string[]) => {
     if (record[key] !== undefined && record[key] !== null) {
       return record[key];
     }
+  }
+
+  return undefined;
+};
+
+const findDeepValue = (source: unknown, keys: string[]): unknown => {
+  if (!source || typeof source !== "object") return undefined;
+
+  const record = source as Record<string, unknown>;
+  const directValue = getNestedValue(record, keys);
+  if (directValue !== undefined && directValue !== null) return directValue;
+
+  for (const value of Object.values(record)) {
+    if (!value || typeof value !== "object") continue;
+
+    const nestedValue = findDeepValue(value, keys);
+    if (nestedValue !== undefined && nestedValue !== null) return nestedValue;
   }
 
   return undefined;
@@ -97,7 +131,9 @@ const getErrorMessage = (data: unknown, fallback: string) => {
 };
 
 const toNumber = (value: unknown, fallback: number) => {
-  const numericValue = Number(value);
+  const normalizedValue =
+    typeof value === "string" ? value.replace(/[$,\s]/g, "") : value;
+  const numericValue = Number(normalizedValue);
   return Number.isFinite(numericValue) ? numericValue : fallback;
 };
 
@@ -112,6 +148,13 @@ const toStableId = (value: unknown, fallback: number) => {
   }, 0);
 };
 
+const getApiId = (user?: Record<string, unknown>) => {
+  const backendId = getNestedValue(user, ["_id", "id", "userId"]);
+  return backendId === undefined || backendId === null
+    ? undefined
+    : backendId.toString();
+};
+
 const normalizeUser = (
   data: unknown,
   fallback: {
@@ -122,9 +165,13 @@ const normalizeUser = (
   }
 ): UserType => {
   const user = findUserRecord(data);
+  const apiId = getApiId(user);
+  const balance = toNumber(findDeepValue(data, BALANCE_KEYS), 0);
 
   return {
-    id: toStableId(getNestedValue(user, ["id", "_id", "userId"]), Date.now()),
+    id: toStableId(apiId, Date.now()),
+    _id: apiId,
+    apiId,
     name:
       String(getNestedValue(user, ["name", "fullName", "username"]) || fallback.name).trim() ||
       fallback.name,
@@ -134,7 +181,8 @@ const normalizeUser = (
         .toLowerCase() || fallback.email,
     phone: String(getNestedValue(user, ["phone", "phoneNumber"]) || fallback.phone || ""),
     password: fallback.password,
-    balance: toNumber(getNestedValue(user, ["initialBalance", "balance", "accountBalance"]), 0),
+    balance,
+    initialBalance: balance,
     status:
       String(getNestedValue(user, ["status", "accountStatus"]) || "Active").toLowerCase() === "suspended"
         ? "Suspended"

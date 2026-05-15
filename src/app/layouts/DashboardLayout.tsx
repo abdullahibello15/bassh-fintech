@@ -19,10 +19,24 @@ import { useAppContext, UserType } from "../context/AppContext";
 
 const BALANCE_POLL_INTERVAL_MS = 10000;
 
-const clearCachedSession = () => {
-  localStorage.removeItem("authToken");
+const clearCachedUserData = () => {
   localStorage.removeItem("currentUser");
   localStorage.removeItem("users");
+};
+
+const clearCachedSession = () => {
+  localStorage.removeItem("authToken");
+  localStorage.removeItem("authUserId");
+  clearCachedUserData();
+};
+
+const getRealUserId = (user: UserType | null | undefined) => {
+  return user?.apiId || user?._id;
+};
+
+const storeAuthenticatedUser = (user: UserType) => {
+  localStorage.setItem("authUserId", getRealUserId(user) || String(user.id));
+  localStorage.setItem("currentUser", JSON.stringify(user));
 };
 
 const getStoredUser = () => {
@@ -55,11 +69,12 @@ const getTokenUserId = (token: string) => {
 const getUserId = (user: UserType | null, token: string) => {
   const storedUser = getStoredUser();
   const userId =
-    user?.apiId ||
+    localStorage.getItem("authUserId") ||
+    getRealUserId(user) ||
+    getRealUserId(storedUser) ||
+    getTokenUserId(token) ||
     (user?.id ? String(user.id) : "") ||
-    storedUser?.apiId ||
-    (storedUser?.id ? String(storedUser.id) : "") ||
-    getTokenUserId(token);
+    (storedUser?.id ? String(storedUser.id) : "");
 
   return {
     userId,
@@ -79,8 +94,17 @@ export function DashboardLayout() {
 
     const verifySession = async () => {
       const token = localStorage.getItem("authToken");
+      const storedUser = getStoredUser();
 
       if (!token) {
+        if (storedUser) {
+          const nextUser = upsertUser(storedUser);
+          storeAuthenticatedUser(nextUser);
+          setCurrentUser(nextUser);
+          setIsCheckingAuth(false);
+          return;
+        }
+
         clearCachedSession();
         setCurrentUser(null);
         navigate("/login", { replace: true });
@@ -88,6 +112,7 @@ export function DashboardLayout() {
       }
 
       const { userId, fallbackUser } = getUserId(currentUser, token);
+      clearCachedUserData();
 
       if (!userId) {
         clearCachedSession();
@@ -101,12 +126,21 @@ export function DashboardLayout() {
         if (!isMounted) return;
 
         const nextUser = upsertUser(latestUser);
+        storeAuthenticatedUser(nextUser);
         setCurrentUser(nextUser);
         setIsCheckingAuth(false);
       } catch (error) {
         if (!isMounted) return;
 
         console.error("Unable to restore authenticated user", error);
+        if (fallbackUser) {
+          const nextUser = upsertUser(fallbackUser);
+          storeAuthenticatedUser(nextUser);
+          setCurrentUser(nextUser);
+          setIsCheckingAuth(false);
+          return;
+        }
+
         clearCachedSession();
         setCurrentUser(null);
         navigate("/login", { replace: true });
@@ -118,7 +152,7 @@ export function DashboardLayout() {
     return () => {
       isMounted = false;
     };
-  }, [currentUser?.apiId, currentUser?.id, navigate]);
+  }, []);
 
   useEffect(() => {
     if (isCheckingAuth || !currentUser) return;
@@ -129,13 +163,12 @@ export function DashboardLayout() {
       try {
         const latestUser = await fetchUser(currentUser);
         if (isMounted) {
-          upsertUser(latestUser);
+          const nextUser = upsertUser(latestUser);
+          storeAuthenticatedUser(nextUser);
+          setCurrentUser(nextUser);
         }
       } catch (error) {
         console.error("Unable to refresh user balance from database", error);
-        clearCachedSession();
-        setCurrentUser(null);
-        navigate("/login", { replace: true });
       }
     };
 

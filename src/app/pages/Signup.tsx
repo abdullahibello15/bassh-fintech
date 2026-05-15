@@ -58,6 +58,13 @@ export function Signup() {
       });
       persistAuthToken(token);
       const authenticatedUser = upsertUser(user);
+      localStorage.setItem(
+        "authUserId",
+        authenticatedUser.apiId ||
+          authenticatedUser._id ||
+          String(authenticatedUser.id)
+      );
+      localStorage.setItem("currentUser", JSON.stringify(authenticatedUser));
       setCurrentUser(authenticatedUser);
       navigate("/dashboard");
     } catch (error) {

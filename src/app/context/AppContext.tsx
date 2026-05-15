@@ -8,13 +8,13 @@ import {
 
 export interface UserType {
   id: number;
+  _id?: string;
   apiId?: string;
   name: string;
   email: string;
   password?: string;
   phone?: string;
-  balance?: number;
-  initialBalance?: number;
+  balance: number;
   status: "Active" | "Suspended";
   joined: string;
   accountType: string;
@@ -64,7 +64,7 @@ interface AppContextType {
   addUser: (user: Omit<UserType, "id" | "joined">) => UserType;
   upsertUser: (user: UserType) => UserType;
   replaceUsers: (users: UserType[]) => void;
-  updateUser: (id: number, user: Partial<UserType>) => void;
+  updateUser: (id: number, updates: Partial<UserType>) => void;
   deleteUser: (id: number) => void;
   setCurrentUser: (user: UserType | null) => void;
   addTransaction: (
@@ -97,22 +97,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [users, setUsers] = useState<UserType[]>(() => {
     const savedUsers = localStorage.getItem("users");
     if (!savedUsers) return [];
-
     return JSON.parse(savedUsers).filter(
       (user: UserType) => !legacyDummyUserEmails.has(user.email.toLowerCase()),
     );
   });
 
   const [transactions, setTransactions] = useState<TransactionType[]>([]);
-
   const [withdrawals, setWithdrawals] = useState<WithdrawalType[]>([]);
-
   const [messages, setMessages] = useState<MessageType[]>([]);
 
   const [currentUser, setCurrentUser] = useState<UserType | null>(() => {
     const savedUser = localStorage.getItem("currentUser");
     if (!savedUser) return null;
-
     const user = JSON.parse(savedUser) as UserType;
     return legacyDummyUserEmails.has(user.email.toLowerCase()) ? null : user;
   });
@@ -126,25 +122,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [currentUser]);
 
+  // Persist users to localStorage
   useEffect(() => {
     localStorage.setItem("users", JSON.stringify(users));
   }, [users]);
 
-  // Update current user when users array changes
+  // ✅ Sync currentUser when users array changes — no infinite loop
   useEffect(() => {
-    if (currentUser) {
-      const updatedUser = users.find(
-        (u) =>
-          u.id === currentUser.id ||
-          u.email.toLowerCase() === currentUser.email.toLowerCase(),
-      );
-      if (updatedUser) {
-        setCurrentUser(updatedUser);
-      } else {
-        setCurrentUser(null);
-      }
+    if (!currentUser) return;
+
+    const updatedUser = users.find(
+      (u) =>
+        (u.apiId && currentUser.apiId && u.apiId === currentUser.apiId) ||
+        u.id === currentUser.id ||
+        u.email.toLowerCase() === currentUser.email.toLowerCase(),
+    );
+
+    if (!updatedUser) {
+      setCurrentUser(null);
+      return;
     }
-  }, [users]);
+
+    const hasChanged =
+      JSON.stringify(updatedUser) !== JSON.stringify(currentUser);
+    if (hasChanged) {
+      setCurrentUser(updatedUser);
+    }
+  }, [users]); // ✅ only users — prevents infinite loop
 
   const addUser = (userData: Omit<UserType, "id" | "joined">) => {
     const newUser: UserType = {
@@ -162,15 +166,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setUsers((currentUsers) => {
       const existingUser = currentUsers.find(
         (user) =>
-          user.id === incomingUser.id ||
           (user.apiId &&
             incomingUser.apiId &&
             user.apiId === incomingUser.apiId) ||
+          (user._id && incomingUser._id && user._id === incomingUser._id) ||
+          user.id === incomingUser.id ||
           user.email.toLowerCase() === incomingUser.email.toLowerCase(),
       );
 
       nextUser = existingUser
-        ? { ...existingUser, ...incomingUser, id: existingUser.id }
+        ? {
+            ...existingUser,
+            ...incomingUser,
+            id: existingUser.id,
+            apiId: incomingUser.apiId || existingUser.apiId,
+            _id: incomingUser._id || existingUser._id,
+          }
         : incomingUser;
 
       return existingUser
@@ -183,16 +194,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setCurrentUser((current) => {
       if (
         !current ||
-        (current.id !== incomingUser.id &&
-          (!current.apiId ||
-            !incomingUser.apiId ||
-            current.apiId !== incomingUser.apiId) &&
+        ((!current.apiId ||
+          !incomingUser.apiId ||
+          current.apiId !== incomingUser.apiId) &&
+          (!current._id ||
+            !incomingUser._id ||
+            current._id !== incomingUser._id) &&
+          current.id !== incomingUser.id &&
           current.email.toLowerCase() !== incomingUser.email.toLowerCase())
       ) {
         return current;
       }
 
-      return { ...current, ...incomingUser, id: current.id };
+      return {
+        ...current,
+        ...incomingUser,
+        id: current.id,
+        apiId: incomingUser.apiId || current.apiId,
+        _id: incomingUser._id || current._id,
+      };
     });
 
     return nextUser;
@@ -202,9 +222,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setUsers(nextUsers);
   };
 
+  // ✅ Fixed — matches by apiId and email too
   const updateUser = (id: number, updates: Partial<UserType>) => {
-    setUsers(
-      users.map((user) => (user.id === id ? { ...user, ...updates } : user)),
+    setUsers((current) =>
+      current.map((user) =>
+        user.id === id ||
+        (updates.apiId && user.apiId === updates.apiId) ||
+        (updates.email &&
+          user.email.toLowerCase() === updates.email.toLowerCase())
+          ? { ...user, ...updates }
+          : user,
+      ),
     );
   };
 
@@ -215,6 +243,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setMessages(messages.filter((m) => m.userId !== id));
   };
 
+  // ✅ Fixed — single balance field, safe user lookup
   const addTransaction = (
     transactionData: Omit<TransactionType, "id" | "date" | "time">,
   ) => {
@@ -230,13 +259,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
     setTransactions([newTransaction, ...transactions]);
 
-    // Update user balance
     if (transactionData.status === "Completed") {
-      updateUser(transactionData.userId, {
-        balance:
-          (users.find((u) => u.id === transactionData.userId)?.balance || 0) +
-          transactionData.amount,
-      });
+      const user = users.find((u) => u.id === transactionData.userId);
+      if (user) {
+        updateUser(transactionData.userId, {
+          balance: (user.balance || 0) + transactionData.amount,
+        });
+      }
     }
   };
 
@@ -251,19 +280,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setWithdrawals([newWithdrawal, ...withdrawals]);
   };
 
+  // ✅ Fixed — single balance field, early return if not found
   const updateWithdrawal = (id: number, status: "Approved" | "Rejected") => {
     const withdrawal = withdrawals.find((w) => w.id === id);
-    if (withdrawal) {
-      setWithdrawals(
-        withdrawals.map((w) => (w.id === id ? { ...w, status } : w)),
-      );
+    if (!withdrawal) return;
 
-      // If approved, deduct from user balance and add transaction
-      if (status === "Approved") {
+    setWithdrawals(
+      withdrawals.map((w) => (w.id === id ? { ...w, status } : w)),
+    );
+
+    if (status === "Approved") {
+      const user = users.find((u) => u.id === withdrawal.userId);
+      if (user) {
         updateUser(withdrawal.userId, {
-          balance:
-            (users.find((u) => u.id === withdrawal.userId)?.balance || 0) -
-            withdrawal.amount,
+          balance: (user.balance || 0) - withdrawal.amount,
         });
 
         addTransaction({
