@@ -1,10 +1,13 @@
 import { UserType } from "../context/AppContext";
 
 const USERS_API_URL = "https://my-backend-wapg.onrender.com/api/users";
+const ADMIN_BALANCE_API_URL =
+  "https://my-backend-wapg.onrender.com/api/admin/balance";
+const BALANCE_API_URL = "https://my-backend-wapg.onrender.com/api/balance";
 
 type UsersPayload = Record<string, unknown>;
 
-const BALANCE_KEYS = ["balance", "initialBalance"];
+const BALANCE_KEYS = ["newBalance", "balance", "initialBalance"]; // ✅ newBalance first
 const USER_ID_KEYS = ["_id", "id", "userId"];
 
 class UsersApiError extends Error {
@@ -15,7 +18,6 @@ class UsersApiError extends Error {
   }
 }
 
-// ✅ Validates a real MongoDB ObjectId — 24 hex characters
 const isMongoId = (value: unknown): boolean => {
   return typeof value === "string" && /^[a-f\d]{24}$/i.test(value);
 };
@@ -73,7 +75,6 @@ const toStableId = (value: unknown, fallback: number) => {
   }, 0);
 };
 
-// ✅ Only returns an id if it's a real MongoDB ObjectId
 const getApiId = (
   user: Record<string, unknown>,
   fallback?: Partial<UserType>,
@@ -253,7 +254,6 @@ const requestUsers = async (
 const userEndpointById = (userId: string | number) =>
   `${USERS_API_URL}/${encodeURIComponent(String(userId))}`;
 
-// ✅ Guards against sending a hashed numeric id to the backend
 const userEndpoint = (user: UserType): string => {
   const id = user.apiId || user._id;
 
@@ -305,7 +305,6 @@ export const fetchUsers = async () => {
 export const fetchUser = async (user: UserType) => {
   const id = user.apiId || user._id;
 
-  // ✅ Block the request entirely if no valid MongoDB id
   if (!id || !isMongoId(id)) {
     console.error(
       "fetchUser: no valid MongoDB id — skipping request for user:",
@@ -321,7 +320,6 @@ export const fetchUserById = async (
   userId: string | number,
   fallback?: Partial<UserType>,
 ) => {
-  // ✅ Block if not a real MongoDB id
   if (!isMongoId(userId)) {
     console.error("fetchUserById: invalid MongoDB id — skipping:", userId);
     return fallback as UserType;
@@ -396,6 +394,56 @@ export const saveUser = async (user: UserType, updates: Partial<UserType>) => {
     const data = await makeRequest("PUT");
     return normalizeUser(data, { ...user, ...updates });
   }
+};
+
+export const addUserBalance = async (user: UserType, amount: number) => {
+  const userId = user.apiId || user._id;
+
+  if (!userId || !isMongoId(userId)) {
+    throw new Error("Unable to add balance: user has no valid backend id.");
+  }
+
+  const payload = {
+    adminKey: "AdminKey12345", // ✅ hardcoded admin key
+    userId,
+    amount, // ✅ fixed: was incorrectly referencing undefined newBalance
+  };
+
+  const data = await requestUsers(
+    ADMIN_BALANCE_API_URL,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    "Unable to add balance.",
+  );
+
+  // ✅ Use newBalance from response, fallback to calculated value
+  const newBalance = toNumber(
+    getNestedValue(data, ["newBalance", "balance"]),
+    user.balance + amount,
+  );
+
+  return normalizeUser(data, {
+    ...user,
+    balance: newBalance,
+  });
+};
+
+export const fetchUserBalance = async (user: UserType) => {
+  const userId = user.apiId || user._id;
+
+  if (!userId || !isMongoId(userId)) {
+    throw new Error("Unable to load balance: user has no valid backend id.");
+  }
+
+  const data = await requestUsers(
+    `${BALANCE_API_URL}/${encodeURIComponent(userId)}`,
+    { method: "GET" },
+    "Unable to load user balance.",
+  );
+
+  return toNumber(findDeepValue(data, BALANCE_KEYS), user.balance || 0);
 };
 
 export const updateUserStatus = async (

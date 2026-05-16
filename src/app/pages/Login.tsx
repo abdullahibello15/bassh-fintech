@@ -6,6 +6,20 @@ import { useAppContext } from "../context/AppContext";
 import { ADMIN_CREDENTIALS } from "../auth/adminCredentials";
 import { loginUser, persistAuthToken } from "../auth/authApi";
 
+const BALANCE_API_URL = "https://my-backend-wapg.onrender.com/api/balance";
+
+// ✅ Fetch balance separately from balance API
+const fetchUserBalance = async (userId: string): Promise<number> => {
+  try {
+    const res = await fetch(`${BALANCE_API_URL}/${userId}`);
+    if (!res.ok) return 0;
+    const data = await res.json();
+    return data.balance ?? 0;
+  } catch {
+    return 0;
+  }
+};
+
 export function Login() {
   const { upsertUser, setCurrentUser } = useAppContext();
   const [email, setEmail] = useState("");
@@ -55,14 +69,26 @@ export function Login() {
         return;
       }
 
-      const authenticatedUser = upsertUser(user);
+      // ✅ Get the userId from the user object
+      const userId = user.apiId || user._id || String(user.id);
+      console.log("userId for balance fetch:", userId);
+
+      // ✅ Fetch balance from balance API separately
+      const balance = await fetchUserBalance(userId);
+      console.log("fetched balance:", balance);
+
+      // ✅ Merge balance into user
+      const userWithBalance = { ...user, balance };
+
+      const authenticatedUser = upsertUser(userWithBalance);
       localStorage.setItem(
         "authUserId",
         authenticatedUser.apiId ||
           authenticatedUser._id ||
           String(authenticatedUser.id),
       );
-      setCurrentUser(authenticatedUser);
+      // ✅ Force correct balance on currentUser
+      setCurrentUser({ ...authenticatedUser, balance });
       navigateAfterLoading("/dashboard");
     } catch (error) {
       if (isLocalAdminLogin) {

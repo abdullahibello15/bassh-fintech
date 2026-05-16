@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { useAppContext, UserType } from '../../context/AppContext';
 import { ADMIN_CREDENTIALS } from '../../auth/adminCredentials';
-import { createUser, fetchUsers, removeUser, saveUser, updateUserStatus } from '../../api/usersApi';
+import { addUserBalance, createUser, fetchUserBalance, fetchUsers, removeUser, saveUser, updateUserStatus } from '../../api/usersApi';
 
 export function Users() {
   const { users, replaceUsers, upsertUser, deleteUser } = useAppContext();
@@ -11,11 +11,14 @@ export function Users() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showBalanceModal, setShowBalanceModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
+  const [isLoadingBalances, setIsLoadingBalances] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [tableBalances, setTableBalances] = useState<Record<string, number>>({});
 
   // Add User Form State
   const [firstName, setFirstName] = useState('');
@@ -26,6 +29,7 @@ export function Users() {
   const [initialBalance, setInitialBalance] = useState('');
   const [accountType, setAccountType] = useState<string>('Standard');
   const [status, setStatus] = useState<'Active' | 'Suspended'>('Active');
+  const [balanceAmount, setBalanceAmount] = useState('');
 
   const resetForm = () => {
     setFirstName('');
@@ -34,14 +38,61 @@ export function Users() {
     setPhone('');
     setPassword('');
     setInitialBalance('');
+    setBalanceAmount('');
     setAccountType('Standard');
     setStatus('Active');
+  };
+
+  const getUserBalanceKey = (user: UserType) =>
+    user.apiId || user._id || String(user.id);
+
+  const getTableBalance = (user: UserType) => {
+    const key = getUserBalanceKey(user);
+    return tableBalances[key] ?? user.balance ?? 0;
+  };
+
+  const loadTableBalances = async (nextUsers: UserType[]) => {
+    setIsLoadingBalances(true);
+
+    const balanceEntries = await Promise.allSettled(
+      nextUsers.map(async (user) => {
+        const balance = await fetchUserBalance(user);
+        return [getUserBalanceKey(user), balance] as const;
+      }),
+    );
+
+    setTableBalances((currentBalances) => {
+      const nextBalances = { ...currentBalances };
+      balanceEntries.forEach((entry) => {
+        if (entry.status === 'fulfilled') {
+          const [key, balance] = entry.value;
+          nextBalances[key] = balance;
+        }
+      });
+      return nextBalances;
+    });
+    setIsLoadingBalances(false);
+  };
+
+  const loadUsers = async () => {
+    setIsLoadingUsers(true);
+    setErrorMessage('');
+
+    try {
+      const apiUsers = await fetchUsers();
+      replaceUsers(apiUsers);
+      await loadTableBalances(apiUsers);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Unable to load users.');
+    } finally {
+      setIsLoadingUsers(false);
+    }
   };
 
   useEffect(() => {
     let isMounted = true;
 
-    const loadUsers = async () => {
+    const loadMountedUsers = async () => {
       setIsLoadingUsers(true);
       setErrorMessage('');
 
@@ -49,6 +100,7 @@ export function Users() {
         const apiUsers = await fetchUsers();
         if (isMounted) {
           replaceUsers(apiUsers);
+          await loadTableBalances(apiUsers);
         }
       } catch (error) {
         if (isMounted) {
@@ -61,7 +113,7 @@ export function Users() {
       }
     };
 
-    loadUsers();
+    loadMountedUsers();
 
     return () => {
       isMounted = false;
@@ -142,6 +194,40 @@ export function Users() {
     setShowDeleteModal(true);
   };
 
+  const handleOpenBalanceModal = (user: UserType) => {
+    setSelectedUser(user);
+    setBalanceAmount('');
+    setShowBalanceModal(true);
+  };
+
+  const handleAddBalance = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!selectedUser || isSaving) return;
+
+    const amount = parseFloat(balanceAmount);
+    setErrorMessage('');
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setErrorMessage('Please enter a valid amount greater than zero.');
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      const updatedUser = await addUserBalance(selectedUser, amount);
+      upsertUser(updatedUser);
+      await loadUsers();
+      setBalanceAmount('');
+      setShowBalanceModal(false);
+      setSelectedUser(null);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Unable to add balance.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleToggleStatus = async (user: UserType) => {
     if (isSaving) return;
 
@@ -168,16 +254,10 @@ export function Users() {
 
     const normalizedEmail = email.trim().toLowerCase();
     const trimmedPhone = phone.trim();
-    const balance = parseFloat(initialBalance);
-
     setErrorMessage('');
 
-    if (!firstName.trim() || !lastName.trim() || !email.trim() || !initialBalance || !selectedUser) {
+    if (!firstName.trim() || !lastName.trim() || !email.trim() || !selectedUser) {
       setErrorMessage('Please fill in all fields');
-      return;
-    }
-    if (!Number.isFinite(balance)) {
-      setErrorMessage('Please enter a valid account balance');
       return;
     }
     if (normalizedEmail === ADMIN_CREDENTIALS.email) {
@@ -193,7 +273,6 @@ export function Users() {
       name: `${firstName.trim()} ${lastName.trim()}`.trim(),
       email: normalizedEmail,
       phone: trimmedPhone,
-      balance,
       accountType,
       status,
     };
@@ -346,7 +425,9 @@ export function Users() {
                       {user.email}
                     </td>
                     <td className="p-4 text-right" style={{ color: '#c9a84c' }}>
-                      ${user.balance.toLocaleString()}
+                      {isLoadingBalances && tableBalances[getUserBalanceKey(user)] === undefined
+                        ? 'Loading...'
+                        : `$${getTableBalance(user).toLocaleString()}`}
                     </td>
                     <td className="p-4 text-center">
                       <span
@@ -380,6 +461,14 @@ export function Users() {
                         >
                           <Edit className="w-4 h-4" />
                           Edit
+                        </button>
+                        <button
+                          onClick={() => handleOpenBalanceModal(user)}
+                          disabled={isSaving}
+                          className="inline-flex items-center gap-2 px-3 py-2 rounded bg-[#10b981]/20 text-[#10b981] hover:bg-[#10b981]/30 transition-all text-sm"
+                        >
+                          <DollarSign className="w-4 h-4" />
+                          Add Balance
                         </button>
                         <button
                           onClick={() => handleToggleStatus(user)}
@@ -451,7 +540,9 @@ export function Users() {
                 <div className="rounded-lg bg-white/5 p-3">
                   <div style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '12px' }}>Balance</div>
                   <div className="mt-1 font-heading" style={{ color: '#c9a84c', fontSize: '18px' }}>
-                    ${user.balance.toLocaleString()}
+                    {isLoadingBalances && tableBalances[getUserBalanceKey(user)] === undefined
+                      ? 'Loading...'
+                      : `$${getTableBalance(user).toLocaleString()}`}
                   </div>
                 </div>
                 <div className="rounded-lg bg-white/5 p-3">
@@ -480,6 +571,14 @@ export function Users() {
                   Edit
                 </button>
                 <button
+                  onClick={() => handleOpenBalanceModal(user)}
+                  disabled={isSaving}
+                  className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded bg-[#10b981]/20 text-[#10b981] hover:bg-[#10b981]/30 transition-all text-sm"
+                >
+                  <DollarSign className="w-4 h-4" />
+                  Add Balance
+                </button>
+                <button
                   onClick={() => handleToggleStatus(user)}
                   disabled={isSaving}
                   className="px-3 py-2 rounded bg-white/10 text-white/80 hover:bg-white/15 transition-all text-sm"
@@ -505,6 +604,113 @@ export function Users() {
           </div>
         )}
       </div>
+
+      {/* Add Balance Modal */}
+      <AnimatePresence>
+        {showBalanceModal && selectedUser && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => {
+                if (!isSaving) {
+                  setShowBalanceModal(false);
+                  setSelectedUser(null);
+                  setBalanceAmount('');
+                }
+              }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+            />
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 20 }}
+              className="fixed inset-0 flex items-center justify-center z-50 p-4"
+            >
+              <div className="relative w-full max-w-md p-6 rounded-2xl bg-gradient-to-br from-[#141e32]/95 to-[#0a0e1a]/95 backdrop-blur-xl border border-[#10b981]/30 shadow-2xl">
+                <button
+                  onClick={() => {
+                    if (!isSaving) {
+                      setShowBalanceModal(false);
+                      setSelectedUser(null);
+                      setBalanceAmount('');
+                    }
+                  }}
+                  disabled={isSaving}
+                  className="absolute top-4 right-4 p-2 rounded-lg hover:bg-white/10 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <X className="w-5 h-5 text-white/70" />
+                </button>
+
+                <div className="mb-6">
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#10b981]/20">
+                    <DollarSign className="h-6 w-6 text-[#10b981]" />
+                  </div>
+                  <h2 className="font-heading mb-2" style={{ fontSize: '26px', color: '#ffffff' }}>
+                    Add Balance
+                  </h2>
+                  <p className="break-words" style={{ color: 'rgba(255, 255, 255, 0.65)' }}>
+                    Add funds to {selectedUser.name}'s account.
+                  </p>
+                </div>
+
+                <div className="mb-5 rounded-xl border border-white/10 bg-white/5 p-4">
+                  <div className="mb-1 text-sm text-white/50">Current Balance</div>
+                  <div className="font-heading text-[#c9a84c]" style={{ fontSize: '28px' }}>
+                    ${selectedUser.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  </div>
+                </div>
+
+                <form onSubmit={handleAddBalance} className="space-y-4">
+                  <div>
+                    <label className="block mb-2" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                      Amount to Add
+                    </label>
+                    <div className="relative">
+                      <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
+                      <input
+                        type="number"
+                        value={balanceAmount}
+                        onChange={(e) => setBalanceAmount(e.target.value)}
+                        placeholder="0.00"
+                        min="0.01"
+                        step="0.01"
+                        required
+                        disabled={isSaving}
+                        className="w-full pl-12 pr-4 py-3 rounded-lg bg-white/5 border border-[#10b981]/20 text-white placeholder:text-white/40 focus:border-[#10b981] focus:outline-none transition-all disabled:cursor-not-allowed disabled:opacity-70"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-3 pt-2 sm:flex-row">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowBalanceModal(false);
+                        setSelectedUser(null);
+                        setBalanceAmount('');
+                      }}
+                      disabled={isSaving}
+                      className="flex-1 px-6 py-3 border border-white/20 text-white rounded-lg hover:border-white/40 transition-all disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSaving}
+                      className="flex-1 px-6 py-3 bg-[#10b981] text-[#06140f] rounded-lg hover:bg-[#0ea271] transition-all hover:scale-105 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:scale-100"
+                    >
+                      {isSaving ? 'Adding...' : 'Add Balance'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Add User Modal */}
       <AnimatePresence>
@@ -828,6 +1034,16 @@ export function Users() {
                     Edit User
                   </button>
                   <button
+                    onClick={() => {
+                      setShowViewModal(false);
+                      handleOpenBalanceModal(selectedUser);
+                    }}
+                    disabled={isSaving}
+                    className="flex-1 px-6 py-3 border border-[#10b981]/40 text-[#10b981] rounded-lg hover:border-[#10b981] hover:bg-[#10b981]/10 transition-all"
+                  >
+                    Add Balance
+                  </button>
+                  <button
                     onClick={() => handleToggleStatus(selectedUser)}
                     disabled={isSaving}
                     className="flex-1 px-6 py-3 border border-white/20 text-white rounded-lg hover:border-white/40 hover:bg-white/10 transition-all"
@@ -964,26 +1180,6 @@ export function Users() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Leave blank to keep current password"
-                        className="w-full pl-12 pr-4 py-3 rounded-lg bg-white/5 border border-[#c9a84c]/20 text-white placeholder:text-white/40 focus:border-[#c9a84c] focus:outline-none transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Balance */}
-                  <div>
-                    <label className="block mb-2" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                      Account Balance
-                    </label>
-                    <div className="relative">
-                      <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
-                      <input
-                        type="number"
-                        value={initialBalance}
-                        onChange={(e) => setInitialBalance(e.target.value)}
-                        placeholder="0.00"
-                        required
-                        min="0"
-                        step="0.01"
                         className="w-full pl-12 pr-4 py-3 rounded-lg bg-white/5 border border-[#c9a84c]/20 text-white placeholder:text-white/40 focus:border-[#c9a84c] focus:outline-none transition-all"
                       />
                     </div>

@@ -139,7 +139,19 @@ export function DashboardLayout() {
       try {
         const latestUser = await fetchUser(currentUser);
         if (isMounted) {
-          const nextUser = upsertUser(latestUser);
+          // ✅ Fetch balance from balance API and preserve it
+          const userId =
+            currentUser.apiId || currentUser._id || String(currentUser.id);
+          const balanceRes = await fetch(
+            `https://my-backend-wapg.onrender.com/api/balance/${userId}`,
+          );
+          const balanceData = balanceRes.ok
+            ? await balanceRes.json()
+            : { balance: currentUser.balance };
+          const nextUser = upsertUser({
+            ...latestUser,
+            balance: balanceData.balance ?? currentUser.balance,
+          });
           storeAuthenticatedUser(nextUser);
           setCurrentUser(nextUser);
         }
@@ -151,7 +163,7 @@ export function DashboardLayout() {
     loadLatestUserFromDatabase();
     const intervalId = window.setInterval(
       loadLatestUserFromDatabase,
-      BALANCE_POLL_INTERVAL_MS
+      BALANCE_POLL_INTERVAL_MS,
     );
 
     return () => {

@@ -107,10 +107,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    console.log("updatedUser balance:", updatedUser.balance); // 👈
+    console.log("currentUser balance:", currentUser.balance); // 👈
+
     const hasChanged =
       JSON.stringify(updatedUser) !== JSON.stringify(currentUser);
     if (hasChanged) {
-      setCurrentUser(updatedUser);
+      setCurrentUser({ ...updatedUser, balance: currentUser.balance });
     }
   }, [users]); // ✅ only users — prevents infinite loop
 
@@ -183,7 +186,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const replaceUsers = (nextUsers: UserType[]) => {
-    setUsers(nextUsers);
+    setUsers((currentUsers) =>
+      nextUsers.map((nextUser) => {
+        // ✅ Find existing user and preserve their balance
+        const existing = currentUsers.find(
+          (u) =>
+            (u.apiId && nextUser.apiId && u.apiId === nextUser.apiId) ||
+            u.email.toLowerCase() === nextUser.email.toLowerCase(),
+        );
+        return existing && existing.balance > 0
+          ? { ...nextUser, balance: existing.balance }
+          : nextUser;
+      }),
+    );
   };
 
   // ✅ Fixed — matches by apiId and email too
