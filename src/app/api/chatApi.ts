@@ -139,6 +139,23 @@ const getConversationArray = (data: unknown): unknown[] => {
   return Array.isArray(conversations) ? conversations : [];
 };
 
+const getMessageArray = (data: unknown): unknown[] => {
+  if (Array.isArray(data)) return data;
+  if (!data || typeof data !== "object") return [];
+
+  const record = data as Record<string, unknown>;
+  const messages = getValue(record, [
+    "messages",
+    "replies",
+    "thread",
+    "items",
+    "data",
+  ]);
+
+  if (Array.isArray(messages)) return messages;
+  return getMessageArray(getValue(record, ["conversation", "chat"]));
+};
+
 const normalizeMessage = (
   data: unknown,
   fallbackSender: ChatMessage["sender"],
@@ -260,26 +277,30 @@ export const getConversations = async () => {
 const normalizeConversationSummary = (data: unknown): ConversationSummary => {
   const record =
     data && typeof data === "object" ? (data as Record<string, unknown>) : {};
+  const conversation = normalizeConversation(data);
+  const lastMessage = conversation.messages[conversation.messages.length - 1];
+  const lastSenderType = toString(
+    getValue(record, ["lastSenderType", "senderType", "sender"]),
+    lastMessage?.sender || "client",
+  );
 
   return {
     conversationId: String(
-      getValue(record, ["conversationId", "id", "_id"]) || "",
+      getValue(record, ["conversationId", "id", "_id"]) || conversation.id,
     ),
     lastMessage: toString(
       getValue(record, ["lastMessage", "message", "text"]),
-      "",
+      lastMessage?.text || conversation.subject,
     ),
-    lastSenderType: toString(
-      getValue(record, ["lastSenderType", "senderType", "sender"]),
-      "client",
-    ),
+    lastSenderType,
     lastSenderName: toString(
       getValue(record, ["lastSenderName", "senderName", "sender"]),
-      "Customer",
+      lastSenderType === "admin" ? "Admin" : conversation.userName,
     ),
     unreadCount: Number(getValue(record, ["unreadCount"])) || 0,
     updatedAt: toDateString(
       getValue(record, ["updatedAt", "updated_at", "date"]),
+      conversation.updatedAt,
     ),
   };
 };
@@ -317,8 +338,9 @@ export const getConversationSummaries = async () => {
     { method: "GET" },
     "Unable to load conversations.",
   );
-  const conversations = Array.isArray(data) ? data : [];
-  return conversations.map(normalizeConversationSummary);
+  return getConversationArray(data)
+    .map(normalizeConversationSummary)
+    .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
 };
 
 export const getConversationMessages = async (conversationId: string) => {
@@ -328,8 +350,7 @@ export const getConversationMessages = async (conversationId: string) => {
     "Unable to load conversation messages.",
   );
 
-  const messages = Array.isArray(data) ? data : [];
-  return messages.map(normalizeConversationMessage);
+  return getMessageArray(data).map(normalizeConversationMessage);
 };
 
 export const postClientMessage = async (input: {

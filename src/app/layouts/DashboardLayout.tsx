@@ -17,7 +17,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { fetchUser, fetchUserById } from "../api/usersApi";
 import { useAppContext, UserType } from "../context/AppContext";
 
-const BALANCE_POLL_INTERVAL_MS = 10000;
+const BALANCE_POLL_INTERVAL_MS = 90000;
 
 const clearCachedUserData = () => {
   localStorage.removeItem("currentUser");

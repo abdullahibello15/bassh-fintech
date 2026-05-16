@@ -3,31 +3,26 @@ import { Send, MessageCircle, Mail, Phone, Loader2 } from "lucide-react";
 import { motion } from "motion/react";
 import { useAppContext } from "../../context/AppContext";
 import {
-  ChatConversation,
   ConversationSummary,
   ConversationMessage,
-  getConversations,
+  getConversationSummaries,
   getConversationMessages,
   postClientMessage,
 } from "../../api/chatApi";
 
-const getConversationUserKey = (conversation: ChatConversation) =>
-  conversation.userApiId || String(conversation.userId);
+const getUserConversationPrefixes = (userId: number) => [
+  `conversation-${userId}-`,
+  `conversation_${userId}_`,
+];
 
-const toConversationSummary = (
-  conversation: ChatConversation,
-): ConversationSummary => {
-  const lastMessage = conversation.messages[conversation.messages.length - 1];
-
-  return {
-    conversationId: conversation.id,
-    lastMessage: lastMessage?.text || conversation.subject,
-    lastSenderType: lastMessage?.sender || "client",
-    lastSenderName:
-      lastMessage?.sender === "admin" ? "Admin" : conversation.userName,
-    unreadCount: 0,
-    updatedAt: conversation.updatedAt,
-  };
+const isUserConversation = (
+  conversation: ConversationSummary,
+  userId: number,
+) => {
+  const prefixes = getUserConversationPrefixes(userId);
+  return prefixes.some((prefix) =>
+    conversation.conversationId.startsWith(prefix),
+  );
 };
 
 export function Support() {
@@ -64,15 +59,11 @@ export function Support() {
     if (showLoading) setIsLoading(true);
 
     try {
-      const userKey = currentUser.apiId || currentUser._id || String(currentUser.id);
-      const allConversations = await getConversations();
+      const allConversations = await getConversationSummaries();
       const nextConversations = allConversations
-        .filter(
-          (conversation) =>
-            getConversationUserKey(conversation) === userKey ||
-            conversation.email.toLowerCase() === currentUser.email.toLowerCase(),
+        .filter((conversation) =>
+          isUserConversation(conversation, currentUser.id),
         )
-        .map(toConversationSummary)
         .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
 
       setConversationSummaries(nextConversations);
@@ -133,13 +124,20 @@ export function Support() {
     loadClientConversations(true);
     const interval = window.setInterval(() => {
       loadClientConversations();
-      if (selectedConversationId) {
-        loadMessages(selectedConversationId);
-      }
     }, 5000);
 
     return () => window.clearInterval(interval);
   }, [currentUser]);
+
+  useEffect(() => {
+    if (!selectedConversationId) return;
+
+    const interval = window.setInterval(() => {
+      loadMessages(selectedConversationId);
+    }, 5000);
+
+    return () => window.clearInterval(interval);
+  }, [selectedConversationId]);
 
   useEffect(() => {
     if (!selectedConversationId) {
