@@ -82,50 +82,14 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const legacyDummyUserEmails = new Set([
-  "john@example.com",
-  "sarah@example.com",
-  "mike@example.com",
-  "emily@example.com",
-  "tom@example.com",
-  "lisa@example.com",
-  "david@example.com",
-  "jessica@example.com",
-]);
-
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [users, setUsers] = useState<UserType[]>(() => {
-    const savedUsers = localStorage.getItem("users");
-    if (!savedUsers) return [];
-    return JSON.parse(savedUsers).filter(
-      (user: UserType) => !legacyDummyUserEmails.has(user.email.toLowerCase()),
-    );
-  });
+  const [users, setUsers] = useState<UserType[]>([]);
 
   const [transactions, setTransactions] = useState<TransactionType[]>([]);
   const [withdrawals, setWithdrawals] = useState<WithdrawalType[]>([]);
   const [messages, setMessages] = useState<MessageType[]>([]);
 
-  const [currentUser, setCurrentUser] = useState<UserType | null>(() => {
-    const savedUser = localStorage.getItem("currentUser");
-    if (!savedUser) return null;
-    const user = JSON.parse(savedUser) as UserType;
-    return legacyDummyUserEmails.has(user.email.toLowerCase()) ? null : user;
-  });
-
-  // Persist current user to localStorage
-  useEffect(() => {
-    if (currentUser) {
-      localStorage.setItem("currentUser", JSON.stringify(currentUser));
-    } else {
-      localStorage.removeItem("currentUser");
-    }
-  }, [currentUser]);
-
-  // Persist users to localStorage
-  useEffect(() => {
-    localStorage.setItem("users", JSON.stringify(users));
-  }, [users]);
+  const [currentUser, setCurrentUser] = useState<UserType | null>(null);
 
   // ✅ Sync currentUser when users array changes — no infinite loop
   useEffect(() => {

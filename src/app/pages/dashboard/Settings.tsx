@@ -2,9 +2,10 @@ import { FormEvent, useEffect, useState } from 'react';
 import { Bell, CheckCircle, Globe, Shield, User } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useAppContext } from '../../context/AppContext';
+import { saveUser } from '../../api/usersApi';
 
 export function Settings() {
-  const { currentUser, updateUser } = useAppContext();
+  const { currentUser, upsertUser } = useAppContext();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -18,6 +19,7 @@ export function Settings() {
   const [currency, setCurrency] = useState('usd');
   const [profileSaved, setProfileSaved] = useState(false);
   const [passwordSaved, setPasswordSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -25,39 +27,14 @@ export function Settings() {
     setFullName(currentUser.name);
     setEmail(currentUser.email);
     setPhone(currentUser.phone || '');
-
-    const savedSettings = localStorage.getItem(`settings:${currentUser.id}`);
-    if (savedSettings) {
-      const settings = JSON.parse(savedSettings);
-      setEmailNotifications(settings.emailNotifications ?? true);
-      setPushNotifications(settings.pushNotifications ?? true);
-      setTwoFactorEnabled(settings.twoFactorEnabled ?? false);
-      setLanguage(settings.language ?? 'en');
-      setCurrency(settings.currency ?? 'usd');
-    }
   }, [currentUser]);
-
-  useEffect(() => {
-    if (!currentUser) return;
-
-    localStorage.setItem(
-      `settings:${currentUser.id}`,
-      JSON.stringify({
-        emailNotifications,
-        pushNotifications,
-        twoFactorEnabled,
-        language,
-        currency,
-      })
-    );
-  }, [currentUser, emailNotifications, pushNotifications, twoFactorEnabled, language, currency]);
 
   const showSaved = (setter: (value: boolean) => void) => {
     setter(true);
     window.setTimeout(() => setter(false), 2500);
   };
 
-  const handleProfileSave = (event: FormEvent) => {
+  const handleProfileSave = async (event: FormEvent) => {
     event.preventDefault();
 
     if (!currentUser) {
@@ -69,15 +46,24 @@ export function Settings() {
       return;
     }
 
-    updateUser(currentUser.id, {
-      name: fullName.trim(),
-      email: email.trim().toLowerCase(),
-      phone: phone.trim(),
-    });
-    showSaved(setProfileSaved);
+    setIsSaving(true);
+
+    try {
+      const updatedUser = await saveUser(currentUser, {
+        name: fullName.trim(),
+        email: email.trim().toLowerCase(),
+        phone: phone.trim(),
+      });
+      upsertUser(updatedUser);
+      showSaved(setProfileSaved);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Unable to save profile.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handlePasswordSave = (event: FormEvent) => {
+  const handlePasswordSave = async (event: FormEvent) => {
     event.preventDefault();
 
     if (!currentUser) {
@@ -97,11 +83,20 @@ export function Settings() {
       return;
     }
 
-    updateUser(currentUser.id, { password: newPassword });
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
-    showSaved(setPasswordSaved);
+    setIsSaving(true);
+
+    try {
+      const updatedUser = await saveUser(currentUser, { password: newPassword });
+      upsertUser(updatedUser);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      showSaved(setPasswordSaved);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Unable to save password.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (!currentUser) {
@@ -182,8 +177,12 @@ export function Settings() {
               />
             </div>
             <div className="flex items-center gap-3">
-              <button type="submit" className="px-6 py-3 bg-[#c9a84c] text-[#0a0e1a] rounded-lg hover:bg-[#b89640] transition-all hover:scale-105">
-                Save Profile
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="px-6 py-3 bg-[#c9a84c] text-[#0a0e1a] rounded-lg hover:bg-[#b89640] transition-all hover:scale-105 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:scale-100"
+              >
+                {isSaving ? 'Saving...' : 'Save Profile'}
               </button>
               {profileSaved && (
                 <span className="inline-flex items-center gap-2 text-[#10b981]">
@@ -264,8 +263,12 @@ export function Settings() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <button type="submit" className="px-6 py-3 border border-[#c9a84c]/40 text-white rounded-lg hover:border-[#c9a84c] transition-all">
-                Change Password
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="px-6 py-3 border border-[#c9a84c]/40 text-white rounded-lg hover:border-[#c9a84c] transition-all disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {isSaving ? 'Saving...' : 'Change Password'}
               </button>
               {passwordSaved && (
                 <span className="inline-flex items-center gap-2 text-[#10b981]">

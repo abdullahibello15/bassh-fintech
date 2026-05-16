@@ -2,7 +2,6 @@ import { UserType } from "../context/AppContext";
 
 const CHAT_API_URL =
   "https://my-backend-wapg.onrender.com/api/chat/conversations";
-const LOCAL_CHAT_STORAGE_KEY = "chatConversationsFallback";
 
 export interface ChatMessage {
   id: string;
@@ -82,13 +81,6 @@ class ChatApiError extends Error {
     this.status = status;
   }
 }
-
-const isMissingRouteError = (error: unknown) => {
-  return (
-    error instanceof ChatApiError &&
-    (error.status === 404 || error.status === 405)
-  );
-};
 
 const requestChat = async (
   url: string,
@@ -174,85 +166,6 @@ const normalizeMessage = (
   };
 };
 
-const getLocalConversations = (): ChatConversation[] => {
-  const savedConversations = localStorage.getItem(LOCAL_CHAT_STORAGE_KEY);
-  if (!savedConversations) return [];
-
-  try {
-    const parsedConversations = JSON.parse(savedConversations);
-    return Array.isArray(parsedConversations)
-      ? parsedConversations.map(normalizeConversation)
-      : [];
-  } catch {
-    return [];
-  }
-};
-
-const saveLocalConversations = (conversations: ChatConversation[]) => {
-  localStorage.setItem(LOCAL_CHAT_STORAGE_KEY, JSON.stringify(conversations));
-};
-
-const upsertLocalConversation = (conversation: ChatConversation) => {
-  const localConversations = getLocalConversations();
-  const existingConversation = localConversations.find(
-    (item) => item.id === conversation.id,
-  );
-  const nextConversations = existingConversation
-    ? localConversations.map((item) =>
-        item.id === conversation.id ? conversation : item,
-      )
-    : [conversation, ...localConversations];
-
-  saveLocalConversations(nextConversations);
-  return conversation;
-};
-
-const createLocalClientConversation = (input: {
-  user: UserType;
-  category: string;
-  subject: string;
-  message: string;
-}) => {
-  const now = new Date().toISOString();
-  const conversation: ChatConversation = {
-    id: crypto.randomUUID(),
-    userId: input.user.id,
-    userApiId: input.user.apiId,
-    userName: input.user.name,
-    email: input.user.email,
-    category: input.category,
-    subject: input.subject,
-    status: "Pending",
-    messages: [
-      {
-        id: crypto.randomUUID(),
-        sender: "client",
-        text: input.message,
-        createdAt: now,
-      },
-    ],
-    createdAt: now,
-    updatedAt: now,
-  };
-
-  return upsertLocalConversation(conversation);
-};
-
-const mergeConversations = (
-  apiConversations: ChatConversation[],
-  localConversations: ChatConversation[],
-) => {
-  const conversationsById = new Map<string, ChatConversation>();
-
-  [...localConversations, ...apiConversations].forEach((conversation) => {
-    conversationsById.set(conversation.id, conversation);
-  });
-
-  return Array.from(conversationsById.values()).sort(
-    (a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt),
-  );
-};
-
 export const normalizeConversation = (data: unknown): ChatConversation => {
   const record =
     data && typeof data === "object" ? (data as Record<string, unknown>) : {};
@@ -302,7 +215,9 @@ export const normalizeConversation = (data: unknown): ChatConversation => {
         0,
     ),
     userApiId: String(
-      getValue(record, ["userApiId"]) || getValue(userRecord, ["_id"]) || "",
+      getValue(record, ["userApiId", "clientId", "userId"]) ||
+        getValue(userRecord, ["_id", "id", "userId"]) ||
+        "",
     ),
     userName: toString(
       getValue(record, ["userName", "user", "name"]) ||
@@ -337,7 +252,9 @@ export const getConversations = async () => {
   const apiConversations = getConversationArray(data).map(
     normalizeConversation,
   );
-  return mergeConversations(apiConversations, getLocalConversations());
+  return apiConversations.sort(
+    (a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt),
+  );
 };
 
 const normalizeConversationSummary = (data: unknown): ConversationSummary => {
@@ -467,34 +384,14 @@ export const updateConversationStatus = async (
   conversationId: string,
   status: ChatConversation["status"],
 ) => {
-  try {
-    const data = await requestChat(
-      `${CHAT_API_URL}/${encodeURIComponent(conversationId)}`,
-      {
-        method: "PATCH",
-        body: JSON.stringify({ status }),
-      },
-      "Unable to update conversation.",
-    );
+  const data = await requestChat(
+    `${CHAT_API_URL}/${encodeURIComponent(conversationId)}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    },
+    "Unable to update conversation.",
+  );
 
-    return normalizeConversation(data);
-  } catch (error) {
-    if (!isMissingRouteError(error)) {
-      throw error;
-    }
-
-    const localConversation = getLocalConversations().find(
-      (conversation) => conversation.id === conversationId,
-    );
-
-    if (!localConversation) {
-      throw error;
-    }
-
-    return upsertLocalConversation({
-      ...localConversation,
-      status,
-      updatedAt: new Date().toISOString(),
-    });
-  }
+  return normalizeConversation(data);
 };

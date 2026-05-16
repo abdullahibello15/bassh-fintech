@@ -3,36 +3,31 @@ import { Send, MessageCircle, Mail, Phone, Loader2 } from "lucide-react";
 import { motion } from "motion/react";
 import { useAppContext } from "../../context/AppContext";
 import {
+  ChatConversation,
   ConversationSummary,
   ConversationMessage,
-  getConversationSummaries,
+  getConversations,
   getConversationMessages,
   postClientMessage,
 } from "../../api/chatApi";
 
-const STORAGE_PREFIX = "clientChatConversationIds";
+const getConversationUserKey = (conversation: ChatConversation) =>
+  conversation.userApiId || String(conversation.userId);
 
-const getSavedConversationIds = (userId: number) => {
-  const savedValue = localStorage.getItem(`${STORAGE_PREFIX}:${userId}`);
-  if (!savedValue) return [];
+const toConversationSummary = (
+  conversation: ChatConversation,
+): ConversationSummary => {
+  const lastMessage = conversation.messages[conversation.messages.length - 1];
 
-  try {
-    const parsed = JSON.parse(savedValue);
-    return Array.isArray(parsed)
-      ? parsed.filter((id) => typeof id === "string")
-      : [];
-  } catch {
-    return [];
-  }
-};
-
-const saveConversationId = (userId: number, conversationId: string) => {
-  const current = new Set(getSavedConversationIds(userId));
-  current.add(conversationId);
-  localStorage.setItem(
-    `${STORAGE_PREFIX}:${userId}`,
-    JSON.stringify(Array.from(current)),
-  );
+  return {
+    conversationId: conversation.id,
+    lastMessage: lastMessage?.text || conversation.subject,
+    lastSenderType: lastMessage?.sender || "client",
+    lastSenderName:
+      lastMessage?.sender === "admin" ? "Admin" : conversation.userName,
+    unreadCount: 0,
+    updatedAt: conversation.updatedAt,
+  };
 };
 
 export function Support() {
@@ -69,12 +64,15 @@ export function Support() {
     if (showLoading) setIsLoading(true);
 
     try {
-      const savedIds = getSavedConversationIds(currentUser.id);
-      const allConversations = await getConversationSummaries();
+      const userKey = currentUser.apiId || currentUser._id || String(currentUser.id);
+      const allConversations = await getConversations();
       const nextConversations = allConversations
-        .filter((conversation) =>
-          savedIds.includes(conversation.conversationId),
+        .filter(
+          (conversation) =>
+            getConversationUserKey(conversation) === userKey ||
+            conversation.email.toLowerCase() === currentUser.email.toLowerCase(),
         )
+        .map(toConversationSummary)
         .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
 
       setConversationSummaries(nextConversations);
@@ -165,27 +163,14 @@ export function Support() {
     setStatusMessage("");
 
     try {
-      const payload = {
-        conversationId: `conversation-${currentUser.id}-${Date.now()}`,
-        message,
-        senderName: currentUser.name,
-        clientId: currentUser.apiId || String(currentUser.id),
-        subject,
-        category,
-      };
-
-      // Save the conversationId BEFORE sending so it's always consistent
-      const conversationId = payload.conversationId;
-      saveConversationId(currentUser.id, conversationId);
-
-      await postClientMessage({
+      const conversation = await postClientMessage({
         user: currentUser,
         category,
         subject,
         message,
       });
       await loadClientConversations(true);
-      setSelectedConversationId(conversationId);
+      setSelectedConversationId(conversation.id);
       setSubject("");
       setMessage("");
       setCategory("general");

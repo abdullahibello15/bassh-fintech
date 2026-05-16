@@ -36,18 +36,6 @@ const getRealUserId = (user: UserType | null | undefined) => {
 
 const storeAuthenticatedUser = (user: UserType) => {
   localStorage.setItem("authUserId", getRealUserId(user) || String(user.id));
-  localStorage.setItem("currentUser", JSON.stringify(user));
-};
-
-const getStoredUser = () => {
-  const savedUser = localStorage.getItem("currentUser");
-  if (!savedUser) return null;
-
-  try {
-    return JSON.parse(savedUser) as UserType;
-  } catch {
-    return null;
-  }
 };
 
 const getTokenUserId = (token: string) => {
@@ -67,18 +55,15 @@ const getTokenUserId = (token: string) => {
 };
 
 const getUserId = (user: UserType | null, token: string) => {
-  const storedUser = getStoredUser();
   const userId =
     localStorage.getItem("authUserId") ||
     getRealUserId(user) ||
-    getRealUserId(storedUser) ||
     getTokenUserId(token) ||
-    (user?.id ? String(user.id) : "") ||
-    (storedUser?.id ? String(storedUser.id) : "");
+    (user?.id ? String(user.id) : "");
 
   return {
     userId,
-    fallbackUser: user || storedUser || undefined,
+    fallbackUser: user || undefined,
   };
 };
 
@@ -94,17 +79,8 @@ export function DashboardLayout() {
 
     const verifySession = async () => {
       const token = localStorage.getItem("authToken");
-      const storedUser = getStoredUser();
 
       if (!token) {
-        if (storedUser) {
-          const nextUser = upsertUser(storedUser);
-          storeAuthenticatedUser(nextUser);
-          setCurrentUser(nextUser);
-          setIsCheckingAuth(false);
-          return;
-        }
-
         clearCachedSession();
         setCurrentUser(null);
         navigate("/login", { replace: true });

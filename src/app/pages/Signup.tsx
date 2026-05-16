@@ -64,7 +64,6 @@ export function Signup() {
           authenticatedUser._id ||
           String(authenticatedUser.id)
       );
-      localStorage.setItem("currentUser", JSON.stringify(authenticatedUser));
       setCurrentUser(authenticatedUser);
       navigate("/dashboard");
     } catch (error) {
