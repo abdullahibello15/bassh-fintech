@@ -126,9 +126,7 @@ export function Login() {
             <span
               className="font-heading"
               style={{ fontSize: "28px", color: "#c9a84c" }}
-            >
-              Fintech
-            </span>
+            ></span>
           </Link>
           <h1
             className="font-heading mb-2"
