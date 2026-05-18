@@ -101,8 +101,8 @@ export function Settings() {
 
   if (!currentUser) {
     return (
-      <div>
-        <h1 className="font-heading mb-2" style={{ fontSize: '36px', color: '#ffffff' }}>
+      <div className="max-w-7xl mx-auto">
+        <h1 className="font-heading mb-2" style={{ fontSize: 'clamp(30px, 9vw, 36px)', color: '#ffffff' }}>
           Settings
         </h1>
         <p style={{ color: 'rgba(255, 255, 255, 0.6)' }}>Please sign in to manage your account settings.</p>
@@ -111,9 +111,9 @@ export function Settings() {
   }
 
   return (
-    <div>
+    <div className="max-w-7xl mx-auto">
       <div className="mb-8">
-        <h1 className="font-heading mb-2" style={{ fontSize: '36px', color: '#ffffff' }}>
+        <h1 className="font-heading mb-2" style={{ fontSize: 'clamp(30px, 9vw, 36px)', color: '#ffffff' }}>
           Settings
         </h1>
         <p style={{ color: 'rgba(255, 255, 255, 0.6)' }}>Manage your account settings</p>
@@ -124,7 +124,7 @@ export function Settings() {
           onSubmit={handleProfileSave}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
+          className="p-5 sm:p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
         >
           <div className="flex items-center gap-3 mb-6">
             <User className="w-6 h-6 text-[#c9a84c]" />
@@ -176,11 +176,11 @@ export function Settings() {
                 className="w-full px-4 py-3 rounded-lg bg-white/5 border border-[#c9a84c]/20 text-white placeholder:text-white/40 focus:border-[#c9a84c] focus:outline-none transition-all"
               />
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <button
                 type="submit"
                 disabled={isSaving}
-                className="px-6 py-3 bg-[#c9a84c] text-[#0a0e1a] rounded-lg hover:bg-[#b89640] transition-all hover:scale-105 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:scale-100"
+                className="w-full px-6 py-3 bg-[#c9a84c] text-[#0a0e1a] rounded-lg hover:bg-[#b89640] transition-all hover:scale-105 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:scale-100 sm:w-auto"
               >
                 {isSaving ? 'Saving...' : 'Save Profile'}
               </button>
@@ -199,7 +199,7 @@ export function Settings() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
+          className="p-5 sm:p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
         >
           <div className="flex items-center gap-3 mb-6">
             <Shield className="w-6 h-6 text-[#c9a84c]" />
@@ -209,7 +209,7 @@ export function Settings() {
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-center justify-between py-3 border-b border-white/10">
+            <div className="flex items-start justify-between gap-4 py-3 border-b border-white/10">
               <div>
                 <div style={{ color: '#ffffff' }} className="mb-1">
                   Two-Factor Authentication
@@ -262,11 +262,11 @@ export function Settings() {
                 />
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <button
                 type="submit"
                 disabled={isSaving}
-                className="px-6 py-3 border border-[#c9a84c]/40 text-white rounded-lg hover:border-[#c9a84c] transition-all disabled:cursor-not-allowed disabled:opacity-70"
+                className="w-full px-6 py-3 border border-[#c9a84c]/40 text-white rounded-lg hover:border-[#c9a84c] transition-all disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
               >
                 {isSaving ? 'Saving...' : 'Change Password'}
               </button>
@@ -284,7 +284,7 @@ export function Settings() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
+          className="p-5 sm:p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
         >
           <div className="flex items-center gap-3 mb-6">
             <Bell className="w-6 h-6 text-[#c9a84c]" />
@@ -308,7 +308,7 @@ export function Settings() {
                 onChange: setPushNotifications,
               },
             ].map((item, index) => (
-              <div key={item.label} className={`flex items-center justify-between py-3 ${index === 0 ? 'border-b border-white/10' : ''}`}>
+              <div key={item.label} className={`flex items-start justify-between gap-4 py-3 ${index === 0 ? 'border-b border-white/10' : ''}`}>
                 <div>
                   <div style={{ color: '#ffffff' }} className="mb-1">
                     {item.label}
@@ -333,7 +333,7 @@ export function Settings() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
+          className="p-5 sm:p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
         >
           <div className="flex items-center gap-3 mb-6">
             <Globe className="w-6 h-6 text-[#c9a84c]" />

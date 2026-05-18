@@ -18,9 +18,9 @@ export function AdminTransactions() {
   });
 
   return (
-    <div>
+    <div className="max-w-7xl mx-auto">
       <div className="mb-8">
-        <h1 className="font-heading mb-2" style={{ fontSize: '36px', color: '#ffffff' }}>
+        <h1 className="font-heading mb-2" style={{ fontSize: 'clamp(30px, 9vw, 36px)', color: '#ffffff' }}>
           Transactions Monitoring
         </h1>
         <p style={{ color: 'rgba(255, 255, 255, 0.6)' }}>Monitor all platform transactions</p>
@@ -64,7 +64,7 @@ export function AdminTransactions() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20 overflow-hidden"
+        className="hidden rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20 overflow-hidden md:block"
       >
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -153,6 +153,69 @@ export function AdminTransactions() {
           </table>
         </div>
       </motion.div>
+
+      <div className="space-y-3 md:hidden">
+        {filteredTransactions.length > 0 ? (
+          filteredTransactions.map((transaction, index) => {
+            const userName = users.find(u => u.id === transaction.userId)?.name || 'Unknown';
+            return (
+              <motion.div
+                key={transaction.id}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className="rounded-xl border border-[#c9a84c]/20 bg-gradient-to-br from-[#141e32]/70 to-[#0a0e1a]/70 p-4 backdrop-blur-xl"
+              >
+                <div className="mb-4 flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="truncate text-white">{userName}</div>
+                    <div className="mt-1 text-sm text-white/50">
+                      #{transaction.id.toString().padStart(5, '0')} · {transaction.date}
+                    </div>
+                  </div>
+                  <span
+                    className={`shrink-0 rounded-full px-3 py-1 text-xs ${
+                      transaction.status === 'Completed'
+                        ? 'bg-[#10b981]/20 text-[#10b981]'
+                        : transaction.status === 'Pending'
+                        ? 'bg-[#c9a84c]/20 text-[#c9a84c]'
+                        : 'bg-[#ef4444]/20 text-[#ef4444]'
+                    }`}
+                  >
+                    {transaction.status}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between rounded-lg bg-white/5 p-3">
+                  <div className="flex items-center gap-2 text-white/70">
+                    <div
+                      className={`flex h-8 w-8 items-center justify-center rounded-full ${
+                        transaction.amount > 0 ? 'bg-[#10b981]/20' : 'bg-[#ef4444]/20'
+                      }`}
+                    >
+                      {transaction.amount > 0 ? (
+                        <ArrowDownRight className="h-4 w-4 text-[#10b981]" />
+                      ) : (
+                        <ArrowUpRight className="h-4 w-4 text-[#ef4444]" />
+                      )}
+                    </div>
+                    {transaction.type}
+                  </div>
+                  <div
+                    className="font-heading"
+                    style={{ color: transaction.amount > 0 ? '#10b981' : '#ef4444' }}
+                  >
+                    {transaction.amount > 0 ? '+' : ''}${Math.abs(transaction.amount).toLocaleString()}
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })
+        ) : (
+          <div className="rounded-xl border border-[#c9a84c]/20 bg-[#141e32]/70 p-8 text-center text-white/60">
+            No transactions found.
+          </div>
+        )}
+      </div>
     </div>
   );
 }

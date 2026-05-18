@@ -29,11 +29,11 @@ export function DashboardOverview() {
   const formattedBalance = currencyFormatter.format(currentUser?.balance || 0);
 
   return (
-    <div>
+    <div className="max-w-7xl mx-auto">
       <div className="mb-8">
         <h1
           className="font-heading mb-2"
-          style={{ fontSize: "36px", color: "#ffffff" }}
+          style={{ fontSize: "clamp(30px, 9vw, 36px)", color: "#ffffff" }}
         >
           Dashboard
         </h1>
@@ -46,7 +46,7 @@ export function DashboardOverview() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-8 p-8 rounded-2xl bg-gradient-to-br from-[#c9a84c] to-[#b89640] shadow-2xl relative overflow-hidden"
+        className="mb-8 p-5 sm:p-8 rounded-2xl bg-gradient-to-br from-[#c9a84c] to-[#b89640] shadow-2xl relative overflow-hidden"
       >
         <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent" />
         <div className="relative">
@@ -55,7 +55,7 @@ export function DashboardOverview() {
           </div>
           <div
             className="font-heading mb-6"
-            style={{ fontSize: "48px", color: "#0a0e1a" }}
+            style={{ fontSize: "clamp(34px, 10vw, 48px)", color: "#0a0e1a" }}
           >
             {formattedBalance}
           </div>
@@ -70,12 +70,12 @@ export function DashboardOverview() {
       </motion.div>
 
       {/* Quick Actions */}
-      <div className="grid md:grid-cols-3 gap-4 mb-8">
+      <div className="grid sm:grid-cols-3 gap-3 sm:gap-4 mb-8">
         <motion.button
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          whileHover={{ scale: 1.05 }}
-          className="p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20 hover:border-[#c9a84c]/50 transition-all text-left"
+          whileHover={{ scale: 1.03 }}
+          className="p-5 sm:p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20 hover:border-[#c9a84c]/50 transition-all text-left"
         >
           <ArrowDownRight className="w-8 h-8 text-[#10b981] mb-3" />
           <div
@@ -93,8 +93,8 @@ export function DashboardOverview() {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.1 }}
-          whileHover={{ scale: 1.05 }}
-          className="p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20 hover:border-[#c9a84c]/50 transition-all text-left"
+          whileHover={{ scale: 1.03 }}
+          className="p-5 sm:p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20 hover:border-[#c9a84c]/50 transition-all text-left"
         >
           <ArrowUpRight className="w-8 h-8 text-[#3b82f6] mb-3" />
           <div
@@ -112,9 +112,9 @@ export function DashboardOverview() {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
-          whileHover={{ scale: 1.05 }}
+          whileHover={{ scale: 1.03 }}
           onClick={() => setIsWithdrawModalOpen(true)}
-          className="p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20 hover:border-[#c9a84c]/50 transition-all text-left"
+          className="p-5 sm:p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20 hover:border-[#c9a84c]/50 transition-all text-left"
         >
           <ArrowUpRight className="w-8 h-8 text-[#c9a84c] mb-3" />
           <div
@@ -130,12 +130,12 @@ export function DashboardOverview() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid md:grid-cols-3 gap-6 mb-8">
+      <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 mb-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
+          className="p-5 sm:p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
         >
           <div className="flex items-center justify-between mb-4">
             <div style={{ color: "rgba(255, 255, 255, 0.7)" }}>
@@ -162,7 +162,7 @@ export function DashboardOverview() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
+          className="p-5 sm:p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
         >
           <div className="flex items-center justify-between mb-4">
             <div style={{ color: "rgba(255, 255, 255, 0.7)" }}>
@@ -189,7 +189,7 @@ export function DashboardOverview() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
+          className="p-5 sm:p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
         >
           <div className="flex items-center justify-between mb-4">
             <div style={{ color: "rgba(255, 255, 255, 0.7)" }}>Total Spent</div>
@@ -216,7 +216,7 @@ export function DashboardOverview() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6 }}
-        className="p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
+        className="p-5 sm:p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
       >
         <h2
           className="font-heading mb-6"
@@ -229,7 +229,7 @@ export function DashboardOverview() {
             userTransactions.map((transaction) => (
               <div
                 key={transaction.id}
-                className="flex items-center justify-between p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-all"
+                className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-all"
               >
                 <div className="flex items-center gap-4">
                   <div

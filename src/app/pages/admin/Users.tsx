@@ -329,9 +329,9 @@ export function Users() {
   );
 
   return (
-    <div>
+    <div className="max-w-7xl mx-auto">
       <div className="mb-8">
-        <h1 className="font-heading mb-2" style={{ fontSize: '36px', color: '#ffffff' }}>
+        <h1 className="font-heading mb-2" style={{ fontSize: 'clamp(30px, 9vw, 36px)', color: '#ffffff' }}>
           Users Management
         </h1>
         <p style={{ color: 'rgba(255, 255, 255, 0.6)' }}>Manage all user accounts</p>
@@ -587,7 +587,7 @@ export function Users() {
                 </button>
                 <button
                   onClick={() => handleDeleteUser(user)}
-                  className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded bg-[#ef4444]/20 text-[#ef4444] hover:bg-[#ef4444]/30 transition-all text-sm"
+                  className="col-span-2 inline-flex items-center justify-center gap-2 px-3 py-2 rounded bg-[#ef4444]/20 text-[#ef4444] hover:bg-[#ef4444]/30 transition-all text-sm"
                 >
                   <Trash2 className="w-4 h-4" />
                   Delete

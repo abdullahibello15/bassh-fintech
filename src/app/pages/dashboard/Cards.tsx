@@ -14,11 +14,11 @@ export function Cards() {
   const cardHolderName = currentUser?.name.trim() || "User";
 
   return (
-    <div>
+    <div className="max-w-7xl mx-auto">
       <div className="mb-8">
         <h1
           className="font-heading mb-2"
-          style={{ fontSize: "36px", color: "#ffffff" }}
+          style={{ fontSize: "clamp(30px, 9vw, 36px)", color: "#ffffff" }}
         >
           Cards
         </h1>
@@ -31,7 +31,7 @@ export function Cards() {
         {/* Card */}
         <div className="perspective-1000 mb-8">
           <motion.div
-            className="relative w-full h-56 cursor-pointer"
+            className="relative w-full h-52 cursor-pointer sm:h-56"
             onClick={() => setIsFlipped(!isFlipped)}
             animate={{ rotateY: isFlipped ? 180 : 0 }}
             transition={{ duration: 0.6 }}
@@ -39,7 +39,7 @@ export function Cards() {
           >
             {/* Front */}
             <div
-              className="absolute inset-0 rounded-2xl p-8 bg-gradient-to-br from-[#c9a84c] to-[#b89640] shadow-2xl"
+              className="absolute inset-0 rounded-2xl p-5 sm:p-8 bg-gradient-to-br from-[#c9a84c] to-[#b89640] shadow-2xl"
               style={{ backfaceVisibility: "hidden" }}
             >
               <div className="flex flex-col h-full justify-between">
@@ -67,7 +67,7 @@ export function Cards() {
                     <div
                       className="font-heading tracking-wider"
                       style={{
-                        fontSize: "24px",
+                        fontSize: "clamp(18px, 5.6vw, 24px)",
                         color: "#0a0e1a",
                         letterSpacing: "0.15em",
                       }}
@@ -114,14 +114,14 @@ export function Cards() {
 
             {/* Back */}
             <div
-              className="absolute inset-0 rounded-2xl p-8 bg-gradient-to-br from-[#b89640] to-[#c9a84c] shadow-2xl"
+              className="absolute inset-0 rounded-2xl p-5 sm:p-8 bg-gradient-to-br from-[#b89640] to-[#c9a84c] shadow-2xl"
               style={{
                 backfaceVisibility: "hidden",
                 transform: "rotateY(180deg)",
               }}
             >
               <div className="h-full flex flex-col justify-between">
-                <div className="h-12 bg-[#0a0e1a] -mx-8 mt-4" />
+                <div className="h-12 bg-[#0a0e1a] -mx-5 mt-4 sm:-mx-8" />
 
                 <div className="flex-1 flex flex-col justify-center">
                   <div className="bg-white/90 h-10 rounded flex items-center justify-end px-4 mb-2">
@@ -158,9 +158,9 @@ export function Cards() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20 mb-6"
+          className="p-5 sm:p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20 mb-6"
         >
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-start justify-between gap-4 mb-4">
             <div>
               <h3
                 className="font-heading mb-1"
@@ -205,7 +205,7 @@ export function Cards() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
+          className="p-5 sm:p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
         >
           <h3
             className="font-heading mb-4"
@@ -215,31 +215,31 @@ export function Cards() {
           </h3>
 
           <div className="space-y-4">
-            <div className="flex justify-between py-3 border-b border-white/10">
+            <div className="flex flex-col gap-1 py-3 border-b border-white/10 sm:flex-row sm:justify-between">
               <span style={{ color: "rgba(255, 255, 255, 0.6)" }}>
                 Card Number
               </span>
               <span style={{ color: "#ffffff" }}>•••• •••• •••• 5678</span>
             </div>
-            <div className="flex justify-between py-3 border-b border-white/10">
+            <div className="flex flex-col gap-1 py-3 border-b border-white/10 sm:flex-row sm:justify-between">
               <span style={{ color: "rgba(255, 255, 255, 0.6)" }}>
                 Card Type
               </span>
               <span style={{ color: "#ffffff" }}>Premium Virtual</span>
             </div>
-            <div className="flex justify-between py-3 border-b border-white/10">
+            <div className="flex flex-col gap-1 py-3 border-b border-white/10 sm:flex-row sm:justify-between">
               <span style={{ color: "rgba(255, 255, 255, 0.6)" }}>
                 Spending Limit
               </span>
               <span style={{ color: "#ffffff" }}>$10,000 / month</span>
             </div>
-            <div className="flex justify-between py-3 border-b border-white/10">
+            <div className="flex flex-col gap-1 py-3 border-b border-white/10 sm:flex-row sm:justify-between">
               <span style={{ color: "rgba(255, 255, 255, 0.6)" }}>
                 Current Usage
               </span>
               <span style={{ color: "#ffffff" }}>$0.00</span>
             </div>
-            <div className="flex justify-between py-3">
+            <div className="flex flex-col gap-1 py-3 sm:flex-row sm:justify-between">
               <span style={{ color: "rgba(255, 255, 255, 0.6)" }}>
                 Available
               </span>

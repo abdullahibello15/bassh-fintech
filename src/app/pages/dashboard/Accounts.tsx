@@ -25,23 +25,23 @@ export function Accounts() {
   ];
 
   return (
-    <div>
+    <div className="max-w-7xl mx-auto">
       <div className="mb-8">
-        <h1 className="font-heading mb-2" style={{ fontSize: '36px', color: '#ffffff' }}>
+        <h1 className="font-heading mb-2" style={{ fontSize: 'clamp(30px, 9vw, 36px)', color: '#ffffff' }}>
           Accounts
         </h1>
         <p style={{ color: 'rgba(255, 255, 255, 0.6)' }}>Manage your accounts</p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
         {accounts.map((account, index) => (
           <motion.div
             key={account.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            whileHover={{ scale: 1.02, boxShadow: '0 0 30px rgba(201, 168, 76, 0.3)' }}
-            className="p-8 rounded-2xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20 hover:border-[#c9a84c]/50 transition-all cursor-pointer"
+            whileHover={{ scale: 1.01, boxShadow: '0 0 30px rgba(201, 168, 76, 0.3)' }}
+            className="p-5 sm:p-8 rounded-2xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20 hover:border-[#c9a84c]/50 transition-all cursor-pointer"
           >
             <div className="flex items-start justify-between mb-6">
               <div>
@@ -61,7 +61,7 @@ export function Accounts() {
               <div style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.6)' }} className="mb-1">
                 Balance
               </div>
-              <div className="font-heading" style={{ fontSize: '36px', color: '#ffffff' }}>
+              <div className="font-heading break-words" style={{ fontSize: 'clamp(28px, 9vw, 36px)', color: '#ffffff' }}>
                 ${account.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </div>
             </div>

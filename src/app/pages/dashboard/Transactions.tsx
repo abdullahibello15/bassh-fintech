@@ -19,9 +19,9 @@ export function Transactions() {
   });
 
   return (
-    <div>
+    <div className="max-w-7xl mx-auto">
       <div className="mb-8">
-        <h1 className="font-heading mb-2" style={{ fontSize: '36px', color: '#ffffff' }}>
+        <h1 className="font-heading mb-2" style={{ fontSize: 'clamp(30px, 9vw, 36px)', color: '#ffffff' }}>
           Transactions
         </h1>
         <p style={{ color: 'rgba(255, 255, 255, 0.6)' }}>View your transaction history</p>
@@ -57,7 +57,7 @@ export function Transactions() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20 overflow-hidden"
+        className="hidden rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20 overflow-hidden md:block"
       >
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -148,6 +148,71 @@ export function Transactions() {
           </table>
         </div>
       </motion.div>
+
+      <div className="space-y-3 md:hidden">
+        {filteredTransactions.length > 0 ? (
+          filteredTransactions.map((transaction, index) => (
+            <motion.div
+              key={transaction.id}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05 }}
+              className="rounded-xl border border-[#c9a84c]/20 bg-gradient-to-br from-[#141e32]/70 to-[#0a0e1a]/70 p-4 backdrop-blur-xl"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex min-w-0 items-start gap-3">
+                  <div
+                    className={`mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+                      transaction.amount > 0 ? 'bg-[#10b981]/20' : 'bg-[#ef4444]/20'
+                    }`}
+                  >
+                    {transaction.amount > 0 ? (
+                      <ArrowDownRight className="h-5 w-5 text-[#10b981]" />
+                    ) : (
+                      <ArrowUpRight className="h-5 w-5 text-[#ef4444]" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="truncate text-white">{transaction.description}</div>
+                    <div className="mt-1 text-sm text-white/50">
+                      {transaction.date} · {transaction.type}
+                    </div>
+                  </div>
+                </div>
+                <div className="shrink-0 text-right">
+                  <div
+                    className="font-heading"
+                    style={{
+                      fontSize: '17px',
+                      color: transaction.amount > 0 ? '#10b981' : '#ef4444',
+                    }}
+                  >
+                    {transaction.amount > 0 ? '+' : ''}${Math.abs(transaction.amount).toLocaleString('en-US', {
+                      minimumFractionDigits: 2,
+                    })}
+                  </div>
+                  <span
+                    className={`mt-2 inline-flex rounded-full px-3 py-1 text-xs ${
+                      transaction.status === 'Completed'
+                        ? 'bg-[#10b981]/20 text-[#10b981]'
+                        : 'bg-[#c9a84c]/20 text-[#c9a84c]'
+                    }`}
+                  >
+                    {transaction.status}
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+          ))
+        ) : (
+          <div
+            className="rounded-xl border border-[#c9a84c]/20 bg-gradient-to-br from-[#141e32]/70 to-[#0a0e1a]/70 p-8 text-center"
+            style={{ color: 'rgba(255, 255, 255, 0.6)' }}
+          >
+            No transactions found.
+          </div>
+        )}
+      </div>
     </div>
   );
 }

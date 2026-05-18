@@ -75,7 +75,7 @@ export function Signup() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a0e1a] via-[#0f1420] to-[#0a0e1a] flex items-center justify-center p-6">
+    <div className="min-h-screen bg-gradient-to-br from-[#0a0e1a] via-[#0f1420] to-[#0a0e1a] flex items-center justify-center p-4 sm:p-6">
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#c9a84c]/10 rounded-full blur-3xl" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#3b82f6]/10 rounded-full blur-3xl" />
@@ -84,7 +84,7 @@ export function Signup() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative w-full max-w-md"
+        className="relative w-full max-w-md py-6"
       >
         {/* Logo */}
         <div className="text-center mb-8">
@@ -101,7 +101,7 @@ export function Signup() {
           </Link>
           <h1
             className="font-heading mb-2"
-            style={{ fontSize: "32px", color: "#ffffff" }}
+            style={{ fontSize: "clamp(28px, 8vw, 32px)", color: "#ffffff" }}
           >
             Create Account
           </h1>
@@ -111,7 +111,7 @@ export function Signup() {
         </div>
 
         {/* Signup Form */}
-        <div className="p-8 rounded-2xl bg-gradient-to-br from-[#141e32]/80 to-[#0a0e1a]/80 backdrop-blur-xl border border-[#c9a84c]/20">
+        <div className="p-5 sm:p-8 rounded-2xl bg-gradient-to-br from-[#141e32]/80 to-[#0a0e1a]/80 backdrop-blur-xl border border-[#c9a84c]/20">
           <form onSubmit={handleSignup} className="space-y-4">
             {/* Full Name */}
             <div>

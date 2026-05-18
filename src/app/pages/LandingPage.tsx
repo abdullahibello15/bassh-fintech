@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router";
 import {
   ArrowRight,
@@ -9,22 +10,27 @@ import {
   Users,
   Lock,
   CheckCircle,
+  Menu,
+  X,
 } from "lucide-react";
 import { motion } from "motion/react";
 
 export function LandingPage() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const closeMenu = () => setIsMenuOpen(false);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a0e1a] via-[#0f1420] to-[#0a0e1a]">
+    <div className="min-h-screen overflow-x-hidden bg-gradient-to-br from-[#0a0e1a] via-[#0f1420] to-[#0a0e1a]">
       {/* Navigation */}
       <nav className="fixed top-0 w-full z-50 backdrop-blur-xl bg-[#0a0e1a]/80 border-b border-[#c9a84c]/20">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#c9a84c] to-[#3b82f6] flex items-center justify-center">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-[#c9a84c] to-[#3b82f6] flex items-center justify-center">
               <Shield className="w-5 h-5 text-[#0a0e1a]" />
             </div>
             <span
               className="font-heading font-semibold"
-              style={{ fontSize: "24px", color: "#c9a84c" }}
+              style={{ fontSize: "clamp(20px, 5vw, 24px)", color: "#c9a84c" }}
             >
               Trust
             </span>
@@ -49,7 +55,7 @@ export function LandingPage() {
               Security
             </a>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="hidden sm:flex items-center gap-4">
             <Link
               to="/login"
               className="text-white/80 hover:text-[#c9a84c] transition-colors"
@@ -63,11 +69,55 @@ export function LandingPage() {
               Get Started
             </Link>
           </div>
+          <button
+            type="button"
+            onClick={() => setIsMenuOpen((open) => !open)}
+            className="sm:hidden inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[#c9a84c]/25 bg-white/5 text-white"
+            aria-label="Toggle navigation"
+          >
+            {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
         </div>
+        {isMenuOpen && (
+          <div className="sm:hidden border-t border-[#c9a84c]/15 bg-[#0a0e1a]/95 px-4 py-4">
+            <div className="flex flex-col gap-2">
+              {[
+                ["#features", "Features"],
+                ["#how-it-works", "How It Works"],
+                ["#security", "Security"],
+              ].map(([href, label]) => (
+                <a
+                  key={href}
+                  href={href}
+                  onClick={closeMenu}
+                  className="rounded-lg px-3 py-3 text-white/80 hover:bg-white/5 hover:text-[#c9a84c]"
+                >
+                  {label}
+                </a>
+              ))}
+              <div className="mt-2 grid grid-cols-2 gap-3">
+                <Link
+                  to="/login"
+                  onClick={closeMenu}
+                  className="rounded-lg border border-[#c9a84c]/30 px-4 py-3 text-center text-white"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  to="/signup"
+                  onClick={closeMenu}
+                  className="rounded-lg bg-[#c9a84c] px-4 py-3 text-center text-[#0a0e1a]"
+                >
+                  Get Started
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-6">
+      <section className="pt-28 sm:pt-32 pb-14 sm:pb-20 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -76,7 +126,11 @@ export function LandingPage() {
           >
             <h1
               className="font-heading mb-6"
-              style={{ fontSize: "64px", lineHeight: "1.1", color: "#ffffff" }}
+              style={{
+                fontSize: "clamp(42px, 12vw, 64px)",
+                lineHeight: "1.05",
+                color: "#ffffff",
+              }}
             >
               Banking for the
               <span className="block bg-gradient-to-r from-[#c9a84c] to-[#3b82f6] bg-clip-text text-transparent">
@@ -85,15 +139,18 @@ export function LandingPage() {
             </h1>
             <p
               className="mb-10 mx-auto max-w-2xl"
-              style={{ fontSize: "20px", color: "rgba(255, 255, 255, 0.7)" }}
+              style={{
+                fontSize: "clamp(16px, 4vw, 20px)",
+                color: "rgba(255, 255, 255, 0.7)",
+              }}
             >
               Experience premium digital banking with cutting-edge security,
               instant transactions, and personalized financial insights.
             </p>
-            <div className="flex items-center justify-center gap-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4">
               <Link
                 to="/signup"
-                className="px-8 py-4 bg-[#c9a84c] text-[#0a0e1a] rounded-lg hover:bg-[#b89640] transition-all hover:scale-105 flex items-center gap-2"
+                className="px-8 py-4 bg-[#c9a84c] text-[#0a0e1a] rounded-lg hover:bg-[#b89640] transition-all hover:scale-105 flex items-center justify-center gap-2"
               >
                 Open Account <ArrowRight className="w-5 h-5" />
               </Link>
@@ -108,14 +165,14 @@ export function LandingPage() {
 
           {/* Floating Cards Animation */}
           <motion.div
-            className="mt-20 relative h-[400px]"
+            className="mt-12 sm:mt-20 relative h-[260px] sm:h-[400px]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5, duration: 1 }}
           >
             <div className="absolute inset-0 bg-gradient-to-r from-[#c9a84c]/20 via-[#3b82f6]/20 to-[#c9a84c]/20 blur-3xl" />
             <div className="relative h-full flex items-center justify-center">
-              <div className="w-[400px] h-[250px] bg-gradient-to-br from-[#c9a84c] to-[#b89640] rounded-2xl shadow-2xl p-8 backdrop-blur-xl border border-[#c9a84c]/30">
+              <div className="w-full max-w-[400px] aspect-[16/10] bg-gradient-to-br from-[#c9a84c] to-[#b89640] rounded-2xl shadow-2xl p-5 sm:p-8 backdrop-blur-xl border border-[#c9a84c]/30">
                 <div className="flex flex-col h-full justify-between">
                   <div>
                     <div className="text-[#0a0e1a]/60 mb-2">
@@ -123,7 +180,7 @@ export function LandingPage() {
                     </div>
                     <div
                       className="text-[#0a0e1a] font-heading"
-                      style={{ fontSize: "32px" }}
+                      style={{ fontSize: "clamp(26px, 8vw, 32px)" }}
                     >
                       $0.00
                     </div>
@@ -150,12 +207,12 @@ export function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 px-6">
+      <section id="features" className="py-14 sm:py-20 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2
               className="font-heading mb-4"
-              style={{ fontSize: "48px", color: "#ffffff" }}
+              style={{ fontSize: "clamp(32px, 9vw, 48px)", color: "#ffffff" }}
             >
               Why Choose Us
             </h2>
@@ -164,7 +221,7 @@ export function LandingPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
             {[
               {
                 icon: Shield,
@@ -209,7 +266,7 @@ export function LandingPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
-                className="p-8 rounded-2xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20 hover:border-[#c9a84c]/50 transition-all hover:scale-105"
+                className="p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20 hover:border-[#c9a84c]/50 transition-all hover:scale-105"
               >
                 <feature.icon className="w-12 h-12 text-[#c9a84c] mb-4" />
                 <h3
@@ -230,13 +287,13 @@ export function LandingPage() {
       {/* How It Works */}
       <section
         id="how-it-works"
-        className="py-20 px-6 bg-gradient-to-br from-[#141e32]/40 to-transparent"
+        className="py-14 sm:py-20 px-4 sm:px-6 bg-gradient-to-br from-[#141e32]/40 to-transparent"
       >
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2
               className="font-heading mb-4"
-              style={{ fontSize: "48px", color: "#ffffff" }}
+              style={{ fontSize: "clamp(32px, 9vw, 48px)", color: "#ffffff" }}
             >
               Get Started in Minutes
             </h2>
@@ -245,7 +302,7 @@ export function LandingPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-4 gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
               {
                 step: "01",
@@ -300,13 +357,13 @@ export function LandingPage() {
       </section>
 
       {/* Security Section */}
-      <section id="security" className="py-20 px-6">
+      <section id="security" className="py-14 sm:py-20 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
               <h2
                 className="font-heading mb-6"
-                style={{ fontSize: "48px", color: "#ffffff" }}
+                style={{ fontSize: "clamp(32px, 9vw, 48px)", color: "#ffffff" }}
               >
                 Your Security is Our Priority
               </h2>
@@ -334,8 +391,8 @@ export function LandingPage() {
             </div>
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-br from-[#c9a84c]/20 to-[#3b82f6]/20 blur-3xl" />
-              <div className="relative p-12 rounded-2xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20">
-                <Lock className="w-32 h-32 mx-auto text-[#c9a84c]" />
+              <div className="relative p-8 sm:p-12 rounded-2xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20">
+                <Lock className="w-24 h-24 sm:w-32 sm:h-32 mx-auto text-[#c9a84c]" />
               </div>
             </div>
           </div>
@@ -343,12 +400,12 @@ export function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-6">
+      <section className="py-14 sm:py-20 px-4 sm:px-6">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="p-12 rounded-2xl bg-gradient-to-br from-[#c9a84c]/20 to-[#3b82f6]/20 backdrop-blur-xl border border-[#c9a84c]/40">
+          <div className="p-6 sm:p-12 rounded-2xl bg-gradient-to-br from-[#c9a84c]/20 to-[#3b82f6]/20 backdrop-blur-xl border border-[#c9a84c]/40">
             <h2
               className="font-heading mb-6"
-              style={{ fontSize: "48px", color: "#ffffff" }}
+              style={{ fontSize: "clamp(32px, 9vw, 48px)", color: "#ffffff" }}
             >
               Ready to Get Started?
             </h2>
@@ -370,7 +427,7 @@ export function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 px-6 border-t border-[#c9a84c]/20">
+      <footer className="py-12 px-4 sm:px-6 border-t border-[#c9a84c]/20">
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>

@@ -7,9 +7,9 @@ export function AdminSettings() {
   const [emailNotifications, setEmailNotifications] = useState(true);
 
   return (
-    <div>
+    <div className="max-w-7xl mx-auto">
       <div className="mb-8">
-        <h1 className="font-heading mb-2" style={{ fontSize: '36px', color: '#ffffff' }}>
+        <h1 className="font-heading mb-2" style={{ fontSize: 'clamp(30px, 9vw, 36px)', color: '#ffffff' }}>
           Admin Settings
         </h1>
         <p style={{ color: 'rgba(255, 255, 255, 0.6)' }}>Configure platform settings</p>
@@ -20,7 +20,7 @@ export function AdminSettings() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
+          className="p-5 sm:p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
         >
           <div className="flex items-center gap-3 mb-6">
             <Shield className="w-6 h-6 text-[#c9a84c]" />
@@ -44,7 +44,7 @@ export function AdminSettings() {
               </p>
             </div>
 
-            <div className="flex items-center justify-between py-4 border-t border-white/10">
+            <div className="flex items-start justify-between gap-4 py-4 border-t border-white/10">
               <div>
                 <div style={{ color: '#ffffff' }} className="mb-1">
                   Auto-approve Small Withdrawals
@@ -85,7 +85,7 @@ export function AdminSettings() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
+          className="p-5 sm:p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
         >
           <div className="flex items-center gap-3 mb-6">
             <Bell className="w-6 h-6 text-[#c9a84c]" />
@@ -95,7 +95,7 @@ export function AdminSettings() {
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-center justify-between py-3 border-b border-white/10">
+            <div className="flex items-start justify-between gap-4 py-3 border-b border-white/10">
               <div>
                 <div style={{ color: '#ffffff' }} className="mb-1">
                   Email Notifications
@@ -136,7 +136,7 @@ export function AdminSettings() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
+          className="p-5 sm:p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
         >
           <div className="flex items-center gap-3 mb-6">
             <Database className="w-6 h-6 text-[#c9a84c]" />

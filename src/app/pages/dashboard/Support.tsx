@@ -183,11 +183,11 @@ export function Support() {
   };
 
   return (
-    <div>
+    <div className="max-w-7xl mx-auto">
       <div className="mb-8">
         <h1
           className="font-heading mb-2"
-          style={{ fontSize: "36px", color: "#ffffff" }}
+          style={{ fontSize: "clamp(30px, 9vw, 36px)", color: "#ffffff" }}
         >
           Customer Support
         </h1>
@@ -206,7 +206,7 @@ export function Support() {
           {errorMessage || statusMessage}
         </div>
       )}
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid gap-4 md:grid-cols-3 md:gap-6">
         <div className="space-y-4">
           {[
             {
@@ -233,7 +233,7 @@ export function Support() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
+              className="p-5 sm:p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
             >
               <div className="w-12 h-12 mb-4 rounded-full bg-white/10 flex items-center justify-center">
                 <item.icon className="w-6 h-6" style={{ color: item.color }} />
@@ -257,7 +257,7 @@ export function Support() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="md:col-span-2 p-8 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
+          className="md:col-span-2 p-5 sm:p-8 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
         >
           <h2
             className="font-heading mb-6"
@@ -344,7 +344,7 @@ export function Support() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="mt-8 p-8 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
+        className="mt-8 p-5 sm:p-8 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
       >
         <h2
           className="font-heading mb-6"
@@ -353,8 +353,8 @@ export function Support() {
           Conversation History
         </h2>
 
-        <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
+        <div className="grid gap-4 lg:grid-cols-[320px_1fr] lg:gap-6">
+          <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-white/5 p-4">
             <h3 className="mb-4 text-sm uppercase tracking-[0.18em] text-white/50">
               Your conversations
             </h3>
@@ -407,7 +407,7 @@ export function Support() {
             )}
           </div>
 
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+          <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-white/5 p-4 sm:p-6">
             {selectedConversation ? (
               <>
                 <div className="mb-6 rounded-3xl bg-[#131b2e]/80 border border-white/10 p-4">
@@ -446,7 +446,7 @@ export function Support() {
                         return (
                           <div
                             key={messageItem.id}
-                            className={`max-w-[80%] rounded-3xl px-5 py-4 ${
+                            className={`max-w-[92%] rounded-2xl px-4 py-3 sm:max-w-[80%] sm:rounded-3xl sm:px-5 sm:py-4 ${
                               isAdmin
                                 ? "rounded-bl-none bg-white/5 text-white"
                                 : "ml-auto rounded-br-none bg-[#c9a84c]/20 text-white"

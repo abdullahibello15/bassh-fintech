@@ -26,20 +26,20 @@ export function Withdrawals() {
   });
 
   return (
-    <div>
+    <div className="max-w-7xl mx-auto">
       <div className="mb-8">
-        <h1 className="font-heading mb-2" style={{ fontSize: '36px', color: '#ffffff' }}>
+        <h1 className="font-heading mb-2" style={{ fontSize: 'clamp(30px, 9vw, 36px)', color: '#ffffff' }}>
           Withdrawal Requests
         </h1>
         <p style={{ color: 'rgba(255, 255, 255, 0.6)' }}>Manage withdrawal requests</p>
       </div>
 
       {/* Summary Stats */}
-      <div className="grid md:grid-cols-3 gap-6 mb-6">
+      <div className="grid gap-4 sm:grid-cols-3 sm:gap-6 mb-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
+          className="p-5 sm:p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
         >
           <div style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.6)' }} className="mb-2">
             Pending Requests
@@ -53,7 +53,7 @@ export function Withdrawals() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
+          className="p-5 sm:p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
         >
           <div style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.6)' }} className="mb-2">
             Total Amount Pending
@@ -70,7 +70,7 @@ export function Withdrawals() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
+          className="p-5 sm:p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
         >
           <div style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.6)' }} className="mb-2">
             Approved Today
@@ -110,7 +110,7 @@ export function Withdrawals() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20 overflow-hidden"
+        className="hidden rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20 overflow-hidden md:block"
       >
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -208,6 +208,70 @@ export function Withdrawals() {
           </table>
         </div>
       </motion.div>
+
+      <div className="space-y-3 md:hidden">
+        {filteredWithdrawals.length > 0 ? (
+          filteredWithdrawals.map((withdrawal, index) => (
+            <motion.div
+              key={withdrawal.id}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05 }}
+              className="rounded-xl border border-[#c9a84c]/20 bg-gradient-to-br from-[#141e32]/70 to-[#0a0e1a]/70 p-4 backdrop-blur-xl"
+            >
+              <div className="mb-4 flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <div className="truncate text-white">{withdrawal.userName}</div>
+                  <div className="mt-1 truncate text-sm text-white/50">{withdrawal.userEmail}</div>
+                </div>
+                <span
+                  className={`shrink-0 rounded-full px-3 py-1 text-xs ${
+                    withdrawal.status === 'Pending'
+                      ? 'bg-[#c9a84c]/20 text-[#c9a84c]'
+                      : withdrawal.status === 'Approved'
+                      ? 'bg-[#10b981]/20 text-[#10b981]'
+                      : 'bg-[#ef4444]/20 text-[#ef4444]'
+                  }`}
+                >
+                  {withdrawal.status}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-lg bg-white/5 p-3">
+                  <div className="text-xs text-white/50">Amount</div>
+                  <div className="mt-1 font-heading text-[#c9a84c]">${withdrawal.amount.toLocaleString()}</div>
+                </div>
+                <div className="rounded-lg bg-white/5 p-3">
+                  <div className="text-xs text-white/50">Requested</div>
+                  <div className="mt-1 text-sm text-white">{withdrawal.requestDate}</div>
+                </div>
+              </div>
+              {withdrawal.status === 'Pending' && (
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => handleApprove(withdrawal.id)}
+                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#10b981]/20 px-4 py-3 text-[#10b981]"
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    Approve
+                  </button>
+                  <button
+                    onClick={() => handleReject(withdrawal.id)}
+                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#ef4444]/20 px-4 py-3 text-[#ef4444]"
+                  >
+                    <XCircle className="h-4 w-4" />
+                    Reject
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          ))
+        ) : (
+          <div className="rounded-xl border border-[#c9a84c]/20 bg-[#141e32]/70 p-8 text-center text-white/60">
+            No withdrawal requests found.
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -37,23 +37,23 @@ export function AdminOverview() {
   ].slice(0, 5);
 
   return (
-    <div>
+    <div className="max-w-7xl mx-auto">
       <div className="mb-8">
-        <h1 className="font-heading mb-2" style={{ fontSize: '36px', color: '#ffffff' }}>
+        <h1 className="font-heading mb-2" style={{ fontSize: 'clamp(30px, 9vw, 36px)', color: '#ffffff' }}>
           Admin Dashboard
         </h1>
         <p style={{ color: 'rgba(255, 255, 255, 0.6)' }}>Overview of your platform</p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid md:grid-cols-4 gap-6 mb-8">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 sm:gap-6 mb-8">
         {stats.map((stat, index) => (
           <motion.div
             key={index}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            className="p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20 hover:border-[#c9a84c]/50 transition-all"
+            className="p-5 sm:p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20 hover:border-[#c9a84c]/50 transition-all"
           >
             <div className="flex items-center justify-between mb-4">
               <stat.icon className="w-8 h-8" style={{ color: stat.color }} />
@@ -76,7 +76,7 @@ export function AdminOverview() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
+        className="p-5 sm:p-6 rounded-xl bg-gradient-to-br from-[#141e32]/60 to-[#0a0e1a]/60 backdrop-blur-xl border border-[#c9a84c]/20"
       >
         <h2 className="font-heading mb-6" style={{ fontSize: '24px', color: '#ffffff' }}>
           Recent Activity
@@ -89,7 +89,7 @@ export function AdminOverview() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.5 + index * 0.05 }}
-                className="flex items-center justify-between p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-all"
+                className="flex flex-col gap-3 p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-all sm:flex-row sm:items-center sm:justify-between"
               >
                 <div>
                   <div style={{ color: '#ffffff' }}>{activity.user}</div>
