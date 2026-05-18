@@ -75,7 +75,11 @@ export function LandingPage() {
             className="sm:hidden inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[#c9a84c]/25 bg-white/5 text-white"
             aria-label="Toggle navigation"
           >
-            {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {isMenuOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
           </button>
         </div>
         {isMenuOpen && (
